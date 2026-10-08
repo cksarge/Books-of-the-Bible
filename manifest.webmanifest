@@ -1,0 +1,11 @@
+{
+  "name": "Seventy-Three: Books of the Bible",
+  "short_name": "Seventy-Three",
+  "description": "Memorize the 73 books of the Catholic Bible in order.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f2ea",
+  "theme_color": "#1F3A5F",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
