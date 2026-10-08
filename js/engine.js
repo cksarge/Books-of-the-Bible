@@ -164,7 +164,8 @@
       } else {
         const letter = mode === 'letter' ? `<span class="sletter">${U.esc(BB.match.hint(n).replace('…', ''))}</span>` : '';
         row = U.el(`<div class="srow in ${mode}"><span class="snum">${n}</span><span class="sfield">${letter}<input class="input" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" aria-label="Book ${n}"></span>${hints && mode !== 'letter' ? '<button type="button" class="hint-mini" title="Reveal first letter" aria-label="Hint">💡</button>' : ''}<span class="sanswer"></span></div>`);
-        row.hinted = mode === 'letter';
+        row.hinted = false;
+        row.letter = mode === 'letter';
         const inp = U.$('input', row);
         const hb = U.$('.hint-mini', row);
         if (hb) hb.onclick = () => {
@@ -207,7 +208,7 @@
           if (!inp) return;
           const given = inp.value.trim();
           const ok = !!given && BB.match.check(given, n, opts.strict);
-          items.push({ n, ok, hinted: ok && row.hinted, given });
+          items.push({ n, ok, hinted: ok && row.hinted, letter: !!row.letter, given });
           inp.disabled = true;
           const hb = U.$('.hint-mini', row);
           if (hb) hb.disabled = true;

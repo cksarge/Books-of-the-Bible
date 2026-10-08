@@ -663,8 +663,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 /* ---------- timeline ---------- */
 .tl-filter { max-width: 360px; margin-bottom: 16px; }
 .timeline { list-style: none; padding: 0; margin: 0; position: relative; }
-.timeline::before { content: ''; position: absolute; left: 19px; top: 10px; bottom: 10px; width: 4px; background: linear-gradient(var(--c-pent), var(--c-hist), var(--c-wis), var(--c-proph), var(--c-gosp), var(--c-paul), var(--c-apoc)); border-radius: 4px; opacity: .5; }
 .era { display: grid; grid-template-columns: 42px 1fr; gap: 12px; margin-bottom: 14px; position: relative; }
+/* connector runs from each dot to the next one, so it stops at the last era */
+.era:not(:last-child)::before { content: ''; position: absolute; left: 19px; top: 21px; bottom: -35px; width: 4px; border-radius: 4px; background: color-mix(in srgb, var(--accent-2) 45%, transparent); }
 .era-dot { width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent-2); display: grid; place-items: center; font-weight: 900; z-index: 1; }
 .era-body { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
 .era-dates { font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }

@@ -77,7 +77,8 @@
         sheet.focus();
         check.onclick = () => {
           const r = sheet.grade();
-          r.items.forEach((it) => { api.record(it.n, it.ok, it.hinted); if (!it.ok) missed.add(it.n); });
+          // the first-letters round is a hint by design: track it as hinted, but don't announce it as "with hints"
+          r.items.forEach((it) => { api.record(it.n, it.ok, it.hinted || it.letter); if (!it.ok) missed.add(it.n); });
           if (counts) { score.correct += r.correct; score.total += r.total; score.hinted += r.hinted; }
           const perfect = r.correct === r.total;
           BB.sfx(perfect ? 'good' : r.correct ? 'tap' : 'bad');
