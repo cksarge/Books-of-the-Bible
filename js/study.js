@@ -389,7 +389,8 @@
           sheet.el.remove();
           api.finish({ correct: g.correct, total: g.total, hinted: g.hinted, missed: g.items.filter((i) => !i.ok).map((i) => i.n), timeMs, details: U.el('<div><h3 class="details-h">Your sheet</h3></div>').appendChild(sheet.el).parentNode });
         };
-        if (g.correct === g.total) return done();
+        // a test is one shot; only the boss recite (a learning step) fixes mistakes before results
+        if (g.correct === g.total || !opts.fixMistakes) return done();
         bar.innerHTML = '';
         BB.fixLoop(sheet, bar, { intro: `${g.correct} of ${g.total} correct`, onDone: done, doneLabel: 'See results' });
         const firstBad = U.$('.srow.bad', sheet.el);
