@@ -174,7 +174,7 @@
     best: {},
     setup: {},
     daily: { streak: 0, bestStreak: 0, last: null, days: [] },
-    settings: { strict: false, sound: true, haptics: true, theme: 'auto' },
+    settings: { strict: false, sound: true, haptics: true, theme: 'auto', summaries: true },
     stats: { answers: 0, correct: 0, hinted: 0, since: Date.now() },
     seenWelcome: false,
   });
@@ -552,6 +552,11 @@
     });
     return t;
   };
+
+  /** Whether to ask "what does this book teach?"-style questions (Settings). Summaries are still shown either way. */
+  BB.askSummaries = () => S.settings.summaries !== false;
+  // setup options that only make sense when summary questions are on
+  BB.SUMMARY_OPTIONS = new Set(['teaches', 'tag', 'summary', 'name-summary', 'summary-name']);
 
   BB.starsFor = (pct) => (pct >= 0.9 ? 3 : pct >= 0.7 ? 2 : pct >= 0.5 ? 1 : 0);
 })();
