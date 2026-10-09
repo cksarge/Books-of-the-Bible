@@ -58,6 +58,13 @@
     return { id: `${st.id}-g${k}`, type: 'game', stage: st, sec: st.sec, icon: def.icon, title: def.title, desc: def.desc, act: g, build };
   }
 
+  /* Checkpoints are sections of their own between (and after) the stages. */
+  const CHECKPOINTS = {
+    cp1: { id: 'cp1', checkpoint: true, label: 'Checkpoint 1', title: 'Old Testament Final', from: 1, to: 46, sec: null, sub: 'Books 1–46 · Genesis to Malachi' },
+    cp2: { id: 'cp2', checkpoint: true, label: 'Checkpoint 2', title: 'New Testament Final', from: 47, to: 73, sec: null, sub: 'Books 47–73 · Matthew to Revelation' },
+    cp3: { id: 'cp3', checkpoint: true, label: 'Final Checkpoint', title: 'Grand Finale', from: 1, to: 73, sec: null, sub: 'All 73 books · Genesis to Revelation' },
+  };
+
   BB.STAGES.forEach((st, i) => {
     if (i >= 2 && i !== 8) {
       const prev = BB.STAGES[i - 1];
@@ -78,7 +85,7 @@
       });
     }
     if (i === 8) {
-      add({ id: 'final-ot', type: 'final', stage: null, sec: null, icon: '🏛️', title: 'Old Testament Final', checkpoint: 'Checkpoint',
+      add({ id: 'final-ot', type: 'final', stage: CHECKPOINTS.cp1, sec: null, icon: '🏛️', title: 'Old Testament Final',
         desc: 'Test simulation: write all 46 Old Testament books from memory.', act: 'test', build: () => ({ from: 1, to: 46, timer: 'up', hints: true }) });
     }
     add({ id: st.id + '-lesson', type: 'lesson', stage: st, sec: st.sec, icon: '📖', title: 'Lesson', desc: `Learn books ${st.from}–${st.to} with summaries, a memory trick, a fading list, and a quick check.`, act: 'lesson', build: () => ({ stage: st.id }) });
@@ -92,11 +99,14 @@
       act: 'seq', build: () => ({ parts: BB.bossParts(bf, st.to, bname) }) });
   });
 
+  add({ id: 'final-nt', type: 'final', stage: CHECKPOINTS.cp2, sec: null, icon: '✝️', title: 'New Testament Final',
+    desc: 'Test simulation: write all 27 New Testament books from memory.', act: 'test', build: () => ({ from: 47, to: 73, timer: 'up', hints: true }) });
+
   /* Final review: two stages over all 73 books, each with a different mix of games and tools. */
   const ALL = U.range(1, 73);
   const FINAL_STAGES = [
-    { id: 'fr1', num: 14, title: 'Final Review · Part 1', from: 1, to: 73, books: ALL, sec: null, final: true },
-    { id: 'fr2', num: 15, title: 'Final Review · Part 2', from: 1, to: 73, books: ALL, sec: null, final: true },
+    { id: 'fr1', num: 14, title: 'Final Review 1', from: 1, to: 73, books: ALL, sec: null, final: true },
+    { id: 'fr2', num: 15, title: 'Final Review 2', from: 1, to: 73, books: ALL, sec: null, final: true },
   ];
   const frStop = (st, key, act, title, desc, build, extra = {}) =>
     add(Object.assign({ id: `${st.id}-${key}`, type: 'game', stage: st, sec: null, icon: BB.acts[act].icon, title, desc, act, build }, extra));
@@ -124,16 +134,24 @@
   frStop(fr2, 'unscramble', 'unscramble', 'Unscramble', 'Eight of the trickiest spellings in the Bible.', () => ({ books: ALL, n: 8 }));
   frStop(fr2, 'quiz', 'quiz', 'Typed Quiz', '15 typed questions on all 73 books — no multiple choice this time.', () => ({ books: ALL, n: 15, format: 'typed', types: ['after', 'before', 'number', 'numberOf', 'teaches'] }), { type: 'quiz' });
   frStop(fr2, 'speed', 'speed', 'Speed Recall', 'Type all 73 from memory against the clock, in any order.', () => ({ from: 1, to: 73 }));
+  add({ id: 'fr2-boss', type: 'boss', stage: fr2, sec: null, icon: '👑', title: 'Boss: Final Review 2',
+    desc: 'Rapid-fire typed questions on all 73 books (3 lives, 30 s each), then put scrambled books from across the Bible back in order.',
+    act: 'seq', build: () => ({ parts: [
+      { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: '12 typed questions from anywhere in the Bible. 3 lives, 30 seconds each.',
+        opts: { books: ALL, n: 12, format: 'typed', types: ['number', 'numberOf', 'teaches', 'after', 'before'], lives: 3, perSec: 30, boss: 'Final Review 2' }, weight: 24 },
+      { id: 'order', icon: '🔀', label: 'Put it all in order', blurb: 'Three rounds of eight books from across the Bible. Drag them into order.', opts: { books: ALL, size: 8, rounds: 3 } },
+    ] }) });
   // keeps its old id so earlier progress on the Grand Final carries over
-  add({ id: 'final-all', type: 'final', stage: fr2, sec: null, icon: '🏆', title: 'Grand Finale',
-    desc: 'The final boss: write all 73 books of the Catholic Bible from memory on a blank numbered sheet.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: true }) });
+  add({ id: 'final-all', type: 'final', stage: CHECKPOINTS.cp3, sec: null, icon: '🏆', title: 'Grand Finale',
+    desc: 'The last stop: write all 73 books of the Catholic Bible from memory on a blank numbered sheet.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: true }) });
 
   const MAP = {};
   stops.forEach((s) => (MAP[s.id] = s));
 
   BB.path = {
     stops, MAP,
-    STAGES: BB.STAGES.concat(FINAL_STAGES),
+    STAGES: [...new Set(stops.map((s) => s.stage).filter(Boolean))], // every section, in path order
+    stageLabel: (st) => (st.checkpoint ? st.label : `Stage ${st.final ? st.num : st.index + 1}`),
     pendingUnlock: null,
     next: (id) => stops[MAP[id].index + 1] || null,
     unlocked: (s) => s.index === 0 || S.stop(stops[s.index - 1].id).stars > 0,
@@ -148,7 +166,7 @@
       if (!s) return BB.go('#/');
       if (!this.unlocked(s)) { ui.toast('🔒 Finish the previous stop first'); return BB.go('#/'); }
       const opts = Object.assign({ sec: s.sec, icon: s.icon }, s.build());
-      const where = s.stage ? s.stage.title : s.type === 'review' ? `Books 1–${BB.STAGES[s.beforeStage.index - 1].to}` : '';
+      const where = s.stage ? (s.stage.checkpoint ? '' : s.stage.title) : s.type === 'review' ? `Books 1–${BB.STAGES[s.beforeStage.index - 1].to}` : '';
       BB.run(s.act, opts, { mode: 'path', stopId: s.id, back: '#/', label: s.title + (where && s.type !== 'boss' ? ' · ' + where : ''), bestKey: 'stop:' + s.id });
     },
   };
@@ -159,12 +177,36 @@
     let cur = null;
     stops.forEach((s) => {
       const st = s.stage || s.beforeStage;
-      const solo = s.type === 'final' && !s.stage; // a checkpoint between stages
-      const key = solo ? s.id : st.id;
-      if (!cur || cur.key !== key) { cur = { key, stage: solo ? null : st, final: solo ? s : null, stops: [] }; out.push(cur); }
+      if (!cur || cur.key !== st.id) { cur = { key: st.id, stage: st, stops: [] }; out.push(cur); }
       cur.stops.push(s);
     });
     return out;
+  }
+
+  /**
+   * Horizontal positions (percent) for a section's stops: a random wander seeded by the
+   * section id, so each section has its own shape that stays the same every visit.
+   * Each step moves sideways by at most MAX_STEP (about the old wave's largest jump),
+   * turning at the edges and now and then on its own. A one-stop section sits in the middle.
+   */
+  const MAX_STEP = 24;
+  function trail(key, n) {
+    if (n === 1) return [50];
+    let seed = 2166136261;
+    for (const ch of key) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619);
+    const rnd = () => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) + 0x6d2b79f5 | 0; return ((seed >>> 0) % 100000) / 100000; };
+    const base = 12 + rnd() * 8; // how far this section tends to swing each step
+    let x = 30 + rnd() * 40;
+    let dir = rnd() < 0.5 ? -1 : 1;
+    const xs = [];
+    for (let k = 0; k < n; k++) {
+      xs.push(x);
+      if (rnd() < 0.3) dir = -dir;
+      let step = Math.min(MAX_STEP, Math.max(8, base + (rnd() - 0.5) * 8));
+      if (x + dir * step > 80 || x + dir * step < 20) dir = -dir;
+      x = Math.max(20, Math.min(80, x + dir * step));
+    }
+    return xs;
   }
 
   BB.pages = BB.pages || {};
@@ -186,23 +228,18 @@
       ${!dailyToday ? `<a class="daily-card" href="#/daily"><span>🔥</span><span><b>Daily review</b><small>${streak ? `Keep your ${streak}-day streak going` : 'Start a streak'} · about 5 minutes</small></span><span class="nc-go">Go →</span></a>` : `<div class="daily-card done"><span>✅</span><span><b>Daily review done</b><small>${streak}-day streak — see you tomorrow!</small></span></div>`}
     </div><div class="path">`;
 
-    let gi = 0;
     groups().forEach((g) => {
-      if (g.final) {
-        const s = g.final;
-        html += `<div class="checkpoint"><div class="cp-label">${U.esc(s.checkpoint)}</div></div>`;
-      } else {
-        const st = g.stage;
-        const stops2 = g.stops.filter((s) => s.stage);
-        const got = stops2.reduce((a, s) => a + S.stop(s.id).stars, 0);
-        const sub = st.final ? 'All 73 books · Genesis to Revelation' : `${U.esc(BB.sec(st.sec).name)}${st.to > BB.sec(st.sec).to ? ' & ' + U.esc(BB.sec(BB.book(st.to).sec).name) : ''} · books ${st.from}–${st.to}`;
-        html += `<div class="stage-banner ${st.final ? 'final-stage' : ''}" ${st.sec ? `data-sec="${st.sec}"` : ''}><div class="sb-left"><div class="sb-num">Stage ${st.final ? st.num : st.index + 1}</div><h2>${U.esc(st.title)}</h2>
-          <div class="sb-sub">${sub}</div></div>
-          <div class="sb-right"><span class="sb-stars">★ ${got}/${stops2.length * 3}</span>${st.final ? '<a class="btn small ghost-light" href="#/books">Books</a>' : `<button class="btn small ghost-light sb-ref" data-stage="${st.id}">Books</button>`}</div></div>`;
-      }
+      const st = g.stage;
+      const own = g.stops.filter((s) => s.stage === st);
+      const got = own.reduce((a, s) => a + S.stop(s.id).stars, 0);
+      const sub = st.sub || (st.final ? 'All 73 books · Genesis to Revelation' : `${U.esc(BB.sec(st.sec).name)}${st.to > BB.sec(st.sec).to ? ' & ' + U.esc(BB.sec(BB.book(st.to).sec).name) : ''} · books ${st.from}–${st.to}`);
+      const cls = st.checkpoint ? 'checkpoint-stage' : st.final ? 'final-stage' : '';
+      html += `<div class="stage-banner ${cls}" ${st.sec ? `data-sec="${st.sec}"` : ''}><div class="sb-left"><div class="sb-num">${U.esc(BB.path.stageLabel(st))}</div><h2>${U.esc(st.title)}</h2>
+        <div class="sb-sub">${sub}</div></div>
+        <div class="sb-right"><span class="sb-stars">★ ${got}/${own.length * 3}</span>${BB.STAGE_MAP[st.id] === st ? `<button class="btn small ghost-light sb-ref" data-stage="${st.id}">Books</button>` : '<a class="btn small ghost-light" href="#/books">Books</a>'}</div></div>`;
       const ROW = 136;
-      const pts = g.stops.map((s, k) => ({ s, x: 50 + 30 * Math.sin((gi + k) * 0.95), y: k * ROW + 78 }));
-      gi += g.stops.length;
+      const xs = trail(g.key, g.stops.length);
+      const pts = g.stops.map((s, k) => ({ s, x: xs[k], y: k * ROW + 78 }));
       const h = g.stops.length * ROW + 40;
       const d = pts.map((p, k) => (k ? `S ${pts[k - 1].x} ${p.y - ROW / 2} ${p.x} ${p.y}` : `M ${p.x} ${p.y}`)).join(' ');
       html += `<div class="stops" style="height:${h}px"><svg class="trail" viewBox="0 0 100 ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}"/></svg>`;
