@@ -174,7 +174,7 @@
     best: {},
     setup: {},
     daily: { streak: 0, bestStreak: 0, last: null, days: [] },
-    settings: { strict: false, sound: true, haptics: true, theme: 'auto' },
+    settings: { strict: false, sound: true, haptics: true, theme: 'auto', summaries: true },
     stats: { answers: 0, correct: 0, hinted: 0, since: Date.now() },
     seenWelcome: false,
   });
@@ -535,8 +535,11 @@
       else if (key && key.startsWith('range:')) { [from, to] = key.slice(6).split('-').map(Number); label = `Books ${from}–${to}`; }
       return { key, from, to, label, books: U.range(from, to) };
     },
-    select(value, name = 'pool') {
-      return `<select class="input" name="${name}">${this.options().map((g) => `<optgroup label="${g.group}">${g.items.map(([v, l]) => `<option value="${v}"${v === value ? ' selected' : ''}>${U.esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+    select(value, name = 'pool', custom = false) {
+      const groups = this.options();
+      if (custom) groups.push({ group: 'Custom', items: [['custom', 'Custom range…']] });
+      if (custom && String(value).startsWith('range:')) value = 'custom';
+      return `<select class="input" name="${name}">${groups.map((g) => `<optgroup label="${g.group}">${g.items.map(([v, l]) => `<option value="${v}"${v === value ? ' selected' : ''}>${U.esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>`;
     },
   };
 
@@ -552,6 +555,11 @@
     });
     return t;
   };
+
+  /** Whether to ask "what does this book teach?"-style questions (Settings). Summaries are still shown either way. */
+  BB.askSummaries = () => S.settings.summaries !== false;
+  // setup options that only make sense when summary questions are on
+  BB.SUMMARY_OPTIONS = new Set(['teaches', 'tag', 'summary', 'name-summary', 'summary-name']);
 
   BB.starsFor = (pct) => (pct >= 0.9 ? 3 : pct >= 0.7 ? 2 : pct >= 0.5 ? 1 : 0);
 })();

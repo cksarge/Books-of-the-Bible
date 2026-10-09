@@ -45,7 +45,8 @@
     gen(o) {
       const P = new Set(o.books);
       const T = (o.targets && o.targets.length ? o.targets : o.books).slice();
-      const types = (o.types && o.types.length ? o.types : Object.keys(TYPES)).filter((k) => TYPES[k]);
+      let types = (o.types && o.types.length ? o.types : Object.keys(TYPES)).filter((k) => TYPES[k] && (k !== 'teaches' || BB.askSummaries()));
+      if (!types.length) types = ['number'];
       let order = [];
       while (order.length < o.n) {
         const batch = U.weightedSample(T, (n) => S.weight(n), Math.min(T.length, o.n - order.length));

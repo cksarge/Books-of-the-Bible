@@ -207,6 +207,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .sec-check { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--c) 40%, transparent); background: var(--c-soft); color: var(--c-ink); font-weight: 700; cursor: pointer; }
 .sec-check input { accent-color: var(--c); }
 .field { margin-bottom: 18px; }
+.custom-range { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: flex-end; }
+.custom-range label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: .88rem; flex: 1 1 120px; }
+.custom-range .range-names { flex-basis: 100%; }
 .f-label { display: block; font-weight: 800; margin-bottom: 6px; font-size: .95rem; }
 .toggle-field small { display: block; margin: 4px 0 0 54px; }
 
