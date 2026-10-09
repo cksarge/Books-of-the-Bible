@@ -48,7 +48,7 @@ It's plain HTML, CSS, and JavaScript, with no build step, no dependencies, and n
 **Quizzes:**
 
 - Mini quiz: choose the length, sections, question types, and multiple-choice or typed answers. The correct answers are shown at the end.
-- Test simulation: a blank numbered sheet with a strict-spelling toggle and an optional timer.
+- Test simulation: a blank numbered sheet (all 73, a testament, a section, a path chunk, or any custom range like books 30–36) with a strict-spelling toggle and an optional timer.
 - Every typed answer has a 💡 first-letter hint. Hinted answers are tracked separately and count half.
 
 **Games:**

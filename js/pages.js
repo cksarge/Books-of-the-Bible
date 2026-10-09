@@ -33,7 +33,16 @@
     if (f.type === 'seg' && !opts(f).some(([v]) => String(v) === String(val))) val = opts(f)[0][0]; // saved choice was hidden
     const lab = `<label class="f-label">${U.esc(f.label || '')}</label>`;
     switch (f.type) {
-      case 'pool': return `<div class="field">${lab}${BB.pools.select(val, f.key)}</div>`;
+      case 'pool': {
+        if (!f.custom) return `<div class="field">${lab}${BB.pools.select(val, f.key)}</div>`;
+        const [a, b] = String(val).startsWith('range:') ? String(val).slice(6).split('-') : ['1', '73'];
+        return `<div class="field">${lab}${BB.pools.select(val, f.key, true)}
+          <div class="custom-range" data-for="${f.key}" ${String(val).startsWith('range:') ? '' : 'hidden'}>
+            <label>From book <input class="input" type="number" inputmode="numeric" min="1" max="73" name="${f.key}_from" value="${a}"></label>
+            <label>to book <input class="input" type="number" inputmode="numeric" min="1" max="73" name="${f.key}_to" value="${b}"></label>
+            <small class="muted range-names"></small>
+          </div></div>`;
+      }
       case 'stage': return `<div class="field">${lab}<select class="input" name="${f.key}">${BB.STAGES.map((s) => `<option value="${s.id}"${s.id === val ? ' selected' : ''}>${s.index + 1}. ${U.esc(s.title)} (${s.from}–${s.to})</option>`).join('')}</select></div>`;
       case 'section': return `<div class="field">${lab}<select class="input" name="${f.key}">${BB.SECTIONS.map((s) => `<option value="${s.id}"${s.id === val ? ' selected' : ''}>${U.esc(s.name)} (${s.from === s.to ? s.from : s.from + '–' + s.to})</option>`).join('')}</select></div>`;
       case 'start': return `<div class="field">${lab}<select class="input" name="${f.key}"><option value="random"${val === 'random' ? ' selected' : ''}>🎲 Random book</option>${BB.SECTIONS.filter((s) => s.from < 73).map((s) => `<option value="${s.from}"${String(s.from) === String(val) ? ' selected' : ''}>${U.esc(BB.book(s.from).name)} (start of ${U.esc(s.name)})</option>`).join('')}</select></div>`;
@@ -58,7 +67,11 @@
       if (f.type === 'toggle') v[f.key] = form.elements[f.key].checked;
       else if (f.type === 'multi' || f.type === 'sections') v[f.key] = U.$$(`input[name="${f.key}"]:checked`, form).map((i) => i.value);
       else if (f.type === 'seg') { const c = U.$(`input[name="${f.key}"]:checked`, form); v[f.key] = c ? c.value : f.def; }
-      else v[f.key] = form.elements[f.key].value;
+      else if (f.type === 'pool' && f.custom && form.elements[f.key].value === 'custom') {
+        const a = parseInt(form.elements[f.key + '_from'].value, 10), b = parseInt(form.elements[f.key + '_to'].value, 10);
+        if (!(a >= 1 && b <= 73 && a <= b)) v._error = 'Enter a range from 1 to 73, with the start no bigger than the end.';
+        v[f.key] = `range:${a}-${b}`;
+      } else v[f.key] = form.elements[f.key].value;
     });
     return v;
   }
@@ -77,11 +90,23 @@
       <button class="btn primary big full" type="submit">Start ${def.icon}</button></form>
       ${bests.length ? `<div class="card bests"><h3>Your best</h3>${bests.map((b) => `<div class="best-row"><span>${U.esc(b.sub || b.label)}</span><b>${Math.round(b.pct * 100)}%</b><span class="muted small">${b.timeMs ? U.fmtTime(b.timeMs) : ''} · ${b.date}</span></div>`).join('')}</div>` : ''}</div>`;
     const form = U.$('form', view);
+    // custom range: show the From/To boxes when chosen, with the book names they cover
+    U.$$('.custom-range', form).forEach((box) => {
+      const key = box.dataset.for, sel = form.elements[key];
+      const names = () => {
+        const a = parseInt(form.elements[key + '_from'].value, 10), b = parseInt(form.elements[key + '_to'].value, 10);
+        U.$('.range-names', box).textContent = a >= 1 && b <= 73 && a <= b ? `${BB.book(a).name} → ${BB.book(b).name} · ${U.plural(b - a + 1, 'book')}` : 'Use numbers 1–73, start ≤ end.';
+      };
+      sel.addEventListener('change', () => { box.hidden = sel.value !== 'custom'; if (!box.hidden) form.elements[key + '_from'].focus(); });
+      box.addEventListener('input', names);
+      names();
+    });
     U.$$('[data-all]', form).forEach((b) => (b.onclick = () => U.$$(`input[name="${b.dataset.all}"]`, form).forEach((i) => (i.checked = true))));
     U.$$('[data-none]', form).forEach((b) => (b.onclick = () => U.$$(`input[name="${b.dataset.none}"]`, form).forEach((i) => (i.checked = false))));
     form.onsubmit = (e) => {
       e.preventDefault();
       const v = read(form, def.setup);
+      if (v._error) { ui.toast(v._error, 'bad'); return; }
       if (def.setup.some((f) => f.type === 'sections') && !v.sections.length) { ui.toast('Pick at least one section'); return; }
       if (def.setup.some((f) => f.type === 'multi') && !v.types.length) { ui.toast('Pick at least one question type'); return; }
       S.data.setup[id] = v;
