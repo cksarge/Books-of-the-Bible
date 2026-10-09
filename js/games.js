@@ -63,6 +63,7 @@
   }
 
   BB.def('order', {
+    fix: ['after', 'before'],
     title: 'Put in Order', icon: '🔀', kind: 'game',
     desc: 'Drag scrambled books into the correct sequence.',
     setup: [
@@ -119,6 +120,7 @@
 
   /* ---------------- Speed recall ---------------- */
   BB.def('speed', {
+    fix: ['number'],
     title: 'Speed Recall', icon: '⚡', kind: 'game',
     desc: 'Type every book from memory against the clock — the list fills in as you go.',
     setup: [
@@ -199,6 +201,7 @@
 
   /* ---------------- Missing book ---------------- */
   BB.def('missing', {
+    fix: ['after', 'before'],
     title: 'Missing Book', icon: '🕳️', kind: 'game',
     desc: 'A run of books with one blank. Fill it in.',
     setup: [
@@ -248,6 +251,7 @@
   /* ---------------- Memory match ---------------- */
   const MATCH_MODES = [['tag', 'Short summary'], ['summary', 'Full summary'], ['section', 'Section'], ['number', 'Number']];
   BB.def('match', {
+    fix: (o) => (o.mode === 'section' ? ['section'] : o.mode === 'number' ? ['numberOf'] : ['teaches']),
     title: 'Memory Match', icon: '🧩', kind: 'game',
     desc: 'Pair each book with its summary, section, or number.',
     setup: [
@@ -336,6 +340,7 @@
 
   /* ---------------- Sort it ---------------- */
   BB.def('sort', {
+    fix: ['section'],
     title: 'Sort It', icon: '🗂️', kind: 'game',
     desc: 'Drop each book into the right section as fast as you can.',
     setup: [
@@ -409,6 +414,7 @@
 
   /* ---------------- Which comes first? ---------------- */
   BB.def('first', {
+    fix: ['after', 'before'],
     title: 'Which Comes First?', icon: '⚖️', kind: 'game',
     desc: 'Two books appear — tap the one that comes earlier.',
     setup: [
@@ -448,6 +454,7 @@
 
   /* ---------------- Neighborhood ---------------- */
   BB.def('hood', {
+    fix: ['after', 'before'],
     title: 'Neighborhood', icon: '🏘️', kind: 'game',
     desc: 'Given one book, name the book before it and the book after it.',
     setup: [
@@ -512,6 +519,7 @@
 
   /* ---------------- Survival streak ---------------- */
   BB.def('survival', {
+    fix: ['after'],
     title: 'Survival Streak', icon: '❤️', kind: 'game',
     desc: 'Keep naming the next book in order. Three lives — how far can you go?',
     setup: [
@@ -578,6 +586,7 @@
 
   /* ---------------- Odd one out ---------------- */
   BB.def('odd', {
+    fix: ['section'],
     title: 'Odd One Out', icon: '🦄', kind: 'game',
     desc: 'Four books — three share a section, one does not. Find it.',
     setup: [
@@ -626,6 +635,7 @@
 
   /* ---------------- Mystery book ---------------- */
   BB.def('mystery', {
+    fix: ['teaches'],
     title: 'Mystery Book', icon: '🕵️', kind: 'game',
     desc: 'Guess the hidden book. Each guess tells you earlier/later and whether the testament and section match.',
     setup: [
@@ -692,6 +702,7 @@
 
   /* ---------------- Bookshelf ---------------- */
   BB.def('shelf', {
+    fix: ['number'],
     title: 'Bookshelf', icon: '📚', kind: 'game',
     desc: 'The books stand as spines on a shelf with gaps. Fill every gap.',
     setup: [
@@ -781,6 +792,7 @@
   /* ---------------- Unscramble ---------------- */
   const HARD = new Set([3, 5, 12, 13, 14, 16, 18, 20, 21, 25, 26, 28, 31, 32, 33, 35, 38, 40, 41, 42, 43, 44, 45, 46, 53, 54, 55, 56, 57, 58, 59, 60, 64, 73]);
   BB.def('unscramble', {
+    fix: { types: ['number', 'teaches'], strict: true }, // spelling counts here
     title: 'Unscramble', icon: '🔤', kind: 'game',
     desc: 'Rebuild scrambled book names — focused on the tricky spellings.',
     setup: [

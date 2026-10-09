@@ -48,7 +48,7 @@
         done = true;
         api.cleanup();
         if (res.timeMs == null) res.timeMs = performance.now() - t0;
-        showResult(view, def, opts, ctx, res);
+        BB.fixMistakes(def, opts, res, body, api, () => showResult(view, def, opts, ctx, res));
       },
     };
     BB.setCleanup(() => api.cleanup());
@@ -99,6 +99,7 @@
           ${res.hinted ? `<div><b>${res.hinted}</b><span>with hints</span></div>` : ''}
         </div>
         ${isBest ? '<div class="badge-best">🏆 New personal best!</div>' : ''}
+        ${res.fixedCount ? `<div class="badge-fixed">🔁 Fixed ${U.plural(res.fixedCount, 'mistake')}</div>` : ''}
         ${dailyNew ? `<div class="badge-best">🔥 Daily review done — ${S.streak()}-day streak!</div>` : ''}
         ${unlocked ? `<div class="badge-unlock">🔓 Unlocked: <b>${U.esc(unlocked.title)}</b></div>` : ''}
         ${ctx.mode === 'path' && !stars ? '<p class="muted">Score at least 50% to earn a star and unlock the next stop.</p>' : ''}
@@ -147,6 +148,38 @@
     }, { mode: 'practice', back: ctx.mode === 'path' ? '#/' : ctx.back || '#/practice', backLabel: 'Done', label: 'Retry missed books' });
   };
 
+  /* ---------------- Fix your mistakes ---------------- */
+  /**
+   * Games end with a short round on every book that was missed: one question per book,
+   * repeated until answered correctly. Score and stats keep the first attempt only.
+   * Quizzes and recite sheets fix mistakes in place, so they skip this (no def.fix).
+   */
+  BB.fixMistakes = function (def, opts, res, body, api, cont) {
+    let fix = typeof def.fix === 'function' ? def.fix(opts) : def.fix;
+    if (Array.isArray(fix)) fix = { types: fix };
+    const missed = [...new Set(res.missed || [])];
+    if (!fix || !missed.length || res.failed || res.fixed) return cont();
+    res.fixedCount = missed.length;
+    body.innerHTML = '';
+    window.scrollTo(0, 0);
+    const intro = U.el(`<div class="card center part-intro fix-intro"><div class="part-icon">🔁</div><h2>Fix your mistakes</h2>
+      <p class="muted">You missed ${U.plural(missed.length, 'book')}. Get each one right before you finish — this won't change your score.</p>
+      <button class="btn primary big">Let's fix them</button></div>`);
+    body.appendChild(intro);
+    const go = () => {
+      intro.remove();
+      const all = U.range(1, 73);
+      const qs = U.shuffle(missed).map((n) => BB.quiz.gen({ books: all, targets: [n], n: 1, types: fix.types, format: 'typed' })[0]);
+      BB.quiz.play(body, qs, {
+        api: Object.assign({}, api, { progress() {} }), noRecord: true, fixPhase: true, strict: fix.strict,
+        onDone() { api.cleanup(); cont(); },
+      });
+    };
+    const b = U.$('button', intro);
+    b.onclick = go;
+    b.focus({ preventScroll: true });
+  };
+
   /* ---------------- Recite sheet ---------------- */
   /**
    * opts: { books:[n], modes:{n:'show'|'input'|'letter'}, strict, live, hints, cols, onEnterLast }
@@ -181,7 +214,7 @@
             const all = U.$$('input:not(:disabled)', el);
             const i = all.indexOf(inp);
             if (i >= 0 && i < all.length - 1) all[i + 1].focus();
-            else if (opts.onEnterLast) opts.onEnterLast();
+            else if (sheet.onEnterLast) sheet.onEnterLast();
           }
         });
         if (opts.live) inp.addEventListener('input', () => {
@@ -195,34 +228,93 @@
       el.appendChild(row);
     });
     container.appendChild(el);
-    return {
+    let pass = 0;
+    const sheet = {
       el, rows,
-      focus() { const i = U.$('input', el); if (i) i.focus({ preventScroll: false }); },
+      onEnterLast: opts.onEnterLast,
+      focus() { const i = U.$('input:not(:disabled)', el); if (i) i.focus({ preventScroll: false }); },
       blanks() { return U.$$('input', el).filter((i) => !i.value.trim()).length; },
       inputs() { return U.$$('input', el); },
+      wrongCount() { return U.$$('.srow.bad', el).length; },
+      /** Grade every input row on the first pass; on later passes only the rows being fixed. */
       grade() {
+        pass++;
         const items = [];
         opts.books.forEach((n) => {
           const row = rows[n];
           const inp = U.$('input', row);
           if (!inp) return;
+          if (pass > 1 && !row.classList.contains('redo')) return;
           const given = inp.value.trim();
           const ok = !!given && BB.match.check(given, n, opts.strict);
           items.push({ n, ok, hinted: ok && row.hinted, letter: !!row.letter, given });
           inp.disabled = true;
           const hb = U.$('.hint-mini', row);
           if (hb) hb.disabled = true;
-          row.classList.remove('live-ok');
+          row.classList.remove('live-ok', 'redo');
           row.classList.add(ok ? 'ok' : 'bad');
           row.setAttribute('data-sec', BB.book(n).sec);
-          if (!ok) U.$('.sanswer', row).textContent = BB.book(n).name;
-          else if (given.toLowerCase() !== BB.book(n).name.toLowerCase()) U.$('.sanswer', row).textContent = BB.book(n).name;
+          const sa = U.$('.sanswer', row);
+          if (ok && pass > 1) { row.classList.add('fixed'); sa.textContent = `✓ fixed on try ${row.tries}`; }
+          else if (!ok || given.toLowerCase() !== BB.book(n).name.toLowerCase()) sa.textContent = BB.book(n).name;
+          else sa.textContent = '';
         });
         const correct = items.filter((i) => i.ok).length;
         const hinted = items.filter((i) => i.hinted).length;
         return { items, correct, hinted, total: items.length };
       },
+      /** Clear the rows that were wrong so they can be retyped from memory. */
+      reopen() {
+        U.$$('.srow.bad', el).forEach((row) => {
+          row.tries = (row.tries || 1) + 1;
+          row.classList.remove('bad');
+          row.classList.add('redo');
+          row.removeAttribute('data-sec');
+          U.$('.sanswer', row).textContent = '';
+          const inp = U.$('input', row);
+          inp.disabled = false;
+          inp.value = '';
+          const hb = U.$('.hint-mini', row);
+          if (hb) { hb.disabled = false; hb.textContent = '💡'; hb.classList.remove('used'); }
+        });
+      },
     };
+    return sheet;
+  };
+
+  /**
+   * After a sheet is graded with mistakes: show the right answers, then have the learner
+   * retype the missed rows from memory until every one is right. Retries don't touch stats.
+   */
+  BB.fixLoop = function (sheet, bar, { intro, onDone, doneLabel = 'Continue →' }) {
+    const button = (label, cls = 'primary') => { const b = U.el(`<button class="btn ${cls} big">${label}</button>`); bar.appendChild(b); return b; };
+    const step = (first) => {
+      const left = sheet.wrongCount();
+      bar.innerHTML = '';
+      if (!left) {
+        bar.insertAdjacentHTML('beforeend', '<div class="round-score good">✓ All fixed!</div>');
+        BB.sfx('good');
+        const b = button(doneLabel);
+        b.onclick = onDone;
+        b.focus({ preventScroll: true });
+        return;
+      }
+      bar.insertAdjacentHTML('beforeend', `<div class="round-score">${first && intro ? intro + ' · ' : ''}${left} to fix — study the answers in red, then retype them from memory.</div>`);
+      const fb = button('Fix mistakes →');
+      fb.focus({ preventScroll: true });
+      fb.onclick = () => {
+        sheet.reopen();
+        bar.innerHTML = '';
+        const cb = button('Check fixes');
+        const check = () => { sheet.onEnterLast = null; step(false); };
+        cb.onclick = () => { sheet.grade(); check(); };
+        sheet.onEnterLast = () => cb.click();
+        const firstRedo = U.$('.srow.redo', sheet.el);
+        if (firstRedo) firstRedo.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        sheet.focus();
+      };
+    };
+    step(true);
   };
 
   /* ---------------- Sequence (multi-part stops) ---------------- */
@@ -249,14 +341,20 @@
         body.appendChild(intro);
         const go = () => {
           body.innerHTML = '';
+          const partOpts = Object.assign({ sec: opts.sec }, part.opts);
           const sub = Object.assign({}, api, {
             strict: part.opts && part.opts.strict != null ? part.opts.strict : api.strict,
             finish(res) {
               api.cleanup();
+              BB.fixMistakes(pdef, partOpts, res, body, api, () => record(res));
+            },
+          });
+          const record = (res) => {
               agg.correct += res.correct || 0;
               agg.total += res.total || 0;
               agg.hinted += res.hinted || 0;
               agg.missed.push(...(res.missed || []));
+              agg.fixedCount = (agg.fixedCount || 0) + (res.fixedCount || 0);
               if (res.details) {
                 const h = U.el(`<div><h3 class="details-h">${U.esc(part.label || pdef.title)}</h3></div>`);
                 if (typeof res.details === 'string') h.insertAdjacentHTML('beforeend', res.details); else h.appendChild(res.details);
@@ -271,9 +369,8 @@
               }
               i++;
               next();
-            },
-          });
-          pdef.run(body, Object.assign({ sec: opts.sec }, part.opts), sub);
+          };
+          pdef.run(body, partOpts, sub);
         };
         U.$('button', intro).onclick = go;
         api.progress(i / parts.length);
