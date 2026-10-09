@@ -400,9 +400,9 @@
       setTimeout(() => t.classList.add('out'), 2200);
       setTimeout(() => t.remove(), 2600);
     },
-    modal({ title = '', body = '', actions = [], wide = false, onClose }) {
-      const m = U.el(`<div class="modal-back"><div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${U.esc(title)}">
-        <div class="modal-head"><h3>${title}</h3><button class="icon-btn" data-close aria-label="Close">✕</button></div>
+    modal({ title = '', body = '', actions = [], wide = false, onClose, locked = false }) {
+      const m = U.el(`<div class="modal-back${locked ? ' locked' : ''}"><div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${U.esc(title)}">
+        <div class="modal-head"><h3>${title}</h3>${locked ? '' : '<button class="icon-btn" data-close aria-label="Close">✕</button>'}</div>
         <div class="modal-body"></div><div class="modal-actions"></div></div></div>`);
       const bodyEl = U.$('.modal-body', m);
       if (typeof body === 'string') bodyEl.innerHTML = body;
@@ -420,9 +420,9 @@
         b.onclick = () => { if (a.onClick && a.onClick() === false) return; close(); };
         acts.appendChild(b);
       });
-      const onKey = (e) => { if (e.key === 'Escape') close(); };
+      const onKey = (e) => { if (e.key === 'Escape' && !locked) close(); };
       document.addEventListener('keydown', onKey);
-      m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-close]')) close(); });
+      m.addEventListener('click', (e) => { if (!locked && (e.target === m || e.target.closest('[data-close]'))) close(); });
       document.body.appendChild(m);
       const f = U.$('input, textarea, .btn.primary', m);
       if (f) setTimeout(() => f.focus(), 50);

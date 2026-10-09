@@ -77,8 +77,8 @@
         sheet.focus();
         check.onclick = () => {
           const r = sheet.grade();
-          // the first-letters round is a hint by design: track it as hinted, but don't announce it as "with hints"
-          r.items.forEach((it) => { api.record(it.n, it.ok, it.hinted || it.letter); if (!it.ok) missed.add(it.n); });
+          // first-letter rounds count as normal answers; only the 💡 button counts as a hint
+          r.items.forEach((it) => { api.record(it.n, it.ok, it.hinted); if (!it.ok) missed.add(it.n); });
           if (counts) { score.correct += r.correct; score.total += r.total; score.hinted += r.hinted; }
           const perfect = r.correct === r.total;
           BB.sfx(perfect ? 'good' : r.correct ? 'tap' : 'bad');
@@ -311,7 +311,7 @@
         U.$('.do-check', bar).onclick = () => {
           if (f === 0) { r++; return round(); }
           const g = sheet.grade();
-          g.items.forEach((it) => api.record(it.n, it.ok, it.hinted || f === 'L'));
+          g.items.forEach((it) => api.record(it.n, it.ok, it.hinted));
           last = g;
           const perfect = g.correct === g.total;
           BB.sfx(perfect ? 'good' : 'tap');

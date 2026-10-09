@@ -15,7 +15,8 @@
 
   BB.router = function () {
     BB.setCleanup(null);
-    U.$$('.modal-back').forEach((m) => m.remove());
+    U.$$('.modal-back:not(.locked)').forEach((m) => m.remove());
+    if (!S.data.seenWelcome && !U.$('.modal-back.locked')) BB.showWelcome();
     document.body.classList.remove('in-activity');
     const view = U.$('#view');
     const raw = (location.hash || '#/').slice(1);
@@ -37,6 +38,19 @@
       case 'progress': return P.progress(view);
       default: location.hash = '#/';
     }
+  };
+
+  /** First visit: a welcome popup that must be read and dismissed with Continue. */
+  BB.showWelcome = function () {
+    if (S.data.seenWelcome) return;
+    BB.ui.modal({
+      title: 'Welcome to Seventy-Three 👋',
+      locked: true,
+      body: `<div class="welcome-pop"><p>Learn all <b>73 books of the Catholic Bible</b> in order — which section each belongs to and what each one teaches.</p>
+        <p>Follow the path from Genesis to Revelation: every stop unlocks the next and earns up to three stars. Everything is also in <b>Practice</b> whenever you want to jump straight to a tool or game.</p>
+        <p class="muted small">Your progress is saved on this device. No account needed.${S.memoryOnly ? ' <b>(Storage is blocked in this browser, so progress will reset when you leave.)</b>' : ''}</p></div>`,
+      actions: [{ label: 'Continue', cls: 'primary', onClick: () => { S.data.seenWelcome = true; S.save(); } }],
+    });
   };
 
   BB.applyTheme();
