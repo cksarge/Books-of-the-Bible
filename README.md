@@ -69,7 +69,8 @@ It's plain HTML, CSS, and JavaScript, with no build step, no dependencies, and n
 **Fixing mistakes.** Anything you get wrong comes back before you can finish:
 
 - Missed quiz questions (Mini Quiz, Daily Review, lesson checks, reviews, boss rounds) return at the end until you answer them correctly ("Correct after 2 tries").
-- On recite sheets (lessons, Fading List, Test Simulation, finals), you see the right answers, then retype the missed rows from memory until they're all right.
+- On recite sheets (lessons, Fading List, boss rounds), you see the right answers, then retype the missed rows from memory until they're all right.
+- The Test Simulation and the two finals are one shot: you submit once and get graded.
 - Games end with a short "Fix your mistakes" round on each missed book.
 
 Only your first attempt counts toward stars, scores, and stats.

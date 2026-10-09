@@ -11,7 +11,7 @@
     return [
       { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: `${Math.min(10, books.length + 3)} typed questions on ${U.esc(name)}. 3 lives, 30 seconds each. Lose all your lives and the boss wins!`,
         opts: { books, n: Math.min(10, books.length + 3), format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: name }, weight: books.length },
-      { id: 'test', icon: '📝', label: 'Final blow: recite it all', blurb: `Write books ${from}–${to} from memory.`, opts: { from, to, timer: 'up', hints: true } },
+      { id: 'test', icon: '📝', label: 'Final blow: recite it all', blurb: `Write books ${from}–${to} from memory.`, opts: { from, to, timer: 'up', hints: true, fixMistakes: true } },
     ];
   };
 
