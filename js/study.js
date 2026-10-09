@@ -225,7 +225,10 @@
           return api.finish({ correct: firstTry.size, total, missed: [...struggled], unit: 'first try', pct: firstTry.size / total });
         }
         const n = deck[0];
-        const mode = opts.mode === 'mixed' ? U.pick(FLASH_MODES.slice(0, 4))[0] : opts.mode;
+        // with summary questions off, only the name/number/section modes are used
+        const modes = BB.askSummaries() ? FLASH_MODES.slice(0, 4) : FLASH_MODES.slice(0, 2);
+        let mode = opts.mode === 'mixed' ? U.pick(modes)[0] : opts.mode;
+        if (!BB.askSummaries() && BB.SUMMARY_OPTIONS.has(mode)) mode = 'num-name';
         const [f, bk] = faces(n, mode);
         flipped = false;
         card.classList.remove('flipped');

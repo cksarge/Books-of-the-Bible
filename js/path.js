@@ -127,7 +127,12 @@
       { id: 'survival', icon: '❤️', label: 'Survival: Genesis to Revelation', blurb: 'Name every book in order from Genesis onward. Three lives — go all the way!', opts: { start: 1, end: 73 } },
     ] }) });
 
-  frStop(fr2, 'flash', 'flash', 'Summary Cards', 'Read a summary, name the book — 15 cards weighted toward your weak spots.', () => ({ books: S.weakest(ALL, 15), mode: 'summary-name', shuffle: true }), { type: 'flash' });
+  frStop(fr2, 'flash', 'flash', 'Summary Cards', '', () => ({ books: S.weakest(ALL, 15), mode: BB.askSummaries() ? 'summary-name' : 'name-section', shuffle: true }), { type: 'flash' });
+  // this stop follows the "what each book teaches" setting
+  Object.defineProperties(stops[stops.length - 1], {
+    title: { get: () => (BB.askSummaries() ? 'Summary Cards' : 'Section Cards') },
+    desc: { get: () => (BB.askSummaries() ? 'Read a summary, name the book — 15 cards weighted toward your weak spots.' : 'See a book, name its section — 15 cards weighted toward your weak spots.') },
+  });
   frStop(fr2, 'match', 'match', 'Memory Match', 'Pair books from across the Bible with their sections.', () => ({ books: ALL, mode: 'section', rounds: 3 }));
   frStop(fr2, 'first', 'first', 'Which Comes First?', '15 quick head-to-heads from anywhere in the Bible.', () => ({ books: ALL, n: 15 }));
   frStop(fr2, 'hood', 'hood', 'Neighborhood', 'Name the books on either side of 8 books from across the Bible.', () => ({ books: ALL, n: 8 }));

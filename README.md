@@ -85,6 +85,12 @@ Only your first attempt counts toward stars, scores, and stats.
 
 Strict spelling turns all of that off. Books you miss come up more often everywhere.
 
+**Settings (⚙️).**
+
+- **Strict spelling** sets the default for typed answers.
+- **Questions about what each book teaches** can be turned off if you only need names, order, and sections. That removes "Which book teaches…?" questions and the summary flashcard and matching modes everywhere. Summaries still show in lessons and the book list.
+- Sound, vibration, and theme.
+
 ## Code map
 
 | File | What it holds |

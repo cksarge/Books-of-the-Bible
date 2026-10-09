@@ -28,16 +28,18 @@
   };
 
   /* ---------------- Setup form ---------------- */
+  const opts = (f) => f.options.filter(([v]) => BB.askSummaries() || !BB.SUMMARY_OPTIONS.has(v));
   function field(f, val) {
+    if (f.type === 'seg' && !opts(f).some(([v]) => String(v) === String(val))) val = opts(f)[0][0]; // saved choice was hidden
     const lab = `<label class="f-label">${U.esc(f.label || '')}</label>`;
     switch (f.type) {
       case 'pool': return `<div class="field">${lab}${BB.pools.select(val, f.key)}</div>`;
       case 'stage': return `<div class="field">${lab}<select class="input" name="${f.key}">${BB.STAGES.map((s) => `<option value="${s.id}"${s.id === val ? ' selected' : ''}>${s.index + 1}. ${U.esc(s.title)} (${s.from}–${s.to})</option>`).join('')}</select></div>`;
       case 'section': return `<div class="field">${lab}<select class="input" name="${f.key}">${BB.SECTIONS.map((s) => `<option value="${s.id}"${s.id === val ? ' selected' : ''}>${U.esc(s.name)} (${s.from === s.to ? s.from : s.from + '–' + s.to})</option>`).join('')}</select></div>`;
       case 'start': return `<div class="field">${lab}<select class="input" name="${f.key}"><option value="random"${val === 'random' ? ' selected' : ''}>🎲 Random book</option>${BB.SECTIONS.filter((s) => s.from < 73).map((s) => `<option value="${s.from}"${String(s.from) === String(val) ? ' selected' : ''}>${U.esc(BB.book(s.from).name)} (start of ${U.esc(s.name)})</option>`).join('')}</select></div>`;
-      case 'seg': return `<div class="field">${lab}<div class="seg" role="radiogroup">${f.options.map(([v, l]) => `<label><input type="radio" name="${f.key}" value="${v}"${String(v) === String(val) ? ' checked' : ''}><span>${U.esc(l)}</span></label>`).join('')}</div></div>`;
+      case 'seg': return `<div class="field">${lab}<div class="seg" role="radiogroup">${opts(f).map(([v, l]) => `<label><input type="radio" name="${f.key}" value="${v}"${String(v) === String(val) ? ' checked' : ''}><span>${U.esc(l)}</span></label>`).join('')}</div></div>`;
       case 'toggle': return `<div class="field toggle-field"><label class="switch"><input type="checkbox" name="${f.key}"${val ? ' checked' : ''}><span class="sw"></span><span>${U.esc(f.label)}</span></label>${f.hint ? `<small class="muted">${U.esc(f.hint)}</small>` : ''}</div>`;
-      case 'multi': return `<div class="field">${lab}<div class="checks">${f.options.map(([v, l]) => `<label class="check"><input type="checkbox" name="${f.key}" value="${v}"${val.includes(v) ? ' checked' : ''}><span>${U.esc(l)}</span></label>`).join('')}</div></div>`;
+      case 'multi': return `<div class="field">${lab}<div class="checks">${opts(f).map(([v, l]) => `<label class="check"><input type="checkbox" name="${f.key}" value="${v}"${val.includes(v) ? ' checked' : ''}><span>${U.esc(l)}</span></label>`).join('')}</div></div>`;
       case 'sections': return `<div class="field">${lab} <button type="button" class="link-btn" data-all="${f.key}">All</button> · <button type="button" class="link-btn" data-none="${f.key}">None</button>
         <div class="sec-checks">${BB.SECTIONS.map((s) => `<label class="sec-check" data-sec="${s.id}"><input type="checkbox" name="${f.key}" value="${s.id}"${val.includes(s.id) ? ' checked' : ''}><span>${U.esc(s.name)}</span></label>`).join('')}</div></div>`;
     }
@@ -213,6 +215,7 @@
     const st = S.settings;
     const body = U.el(`<div class="settings">
       <div class="field toggle-field"><label class="switch"><input type="checkbox" name="strict"${st.strict ? ' checked' : ''}><span class="sw"></span><span>Strict spelling by default</span></label><small class="muted">Off: typed answers ignore capitals and accept variants like "1 Sam", "Song of Solomon", "Apocalypse", and small typos.</small></div>
+      <div class="field toggle-field"><label class="switch"><input type="checkbox" name="summaries"${BB.askSummaries() ? ' checked' : ''}><span class="sw"></span><span>Questions about what each book teaches</span></label><small class="muted">Turn off to practice only book names, order, and sections. Summaries still show in lessons and the book list.</small></div>
       <div class="field toggle-field"><label class="switch"><input type="checkbox" name="sound"${st.sound ? ' checked' : ''}><span class="sw"></span><span>Sound effects</span></label></div>
       <div class="field toggle-field"><label class="switch"><input type="checkbox" name="haptics"${st.haptics ? ' checked' : ''}><span class="sw"></span><span>Vibration (phones)</span></label></div>
       <div class="field"><label class="f-label">Theme</label><div class="seg">${[['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(([v, l]) => `<label><input type="radio" name="theme" value="${v}"${st.theme === v ? ' checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
@@ -222,6 +225,11 @@
       S.set(t.name, t.type === 'checkbox' ? t.checked : t.value);
       if (t.name === 'theme') BB.applyTheme();
       if (t.name === 'sound' && t.checked) BB.sfx('good');
+      // refresh the page behind the popup so labels and options match the new setting
+      if (t.name === 'summaries' && !document.body.classList.contains('in-activity')) {
+        const v = U.$('#view'), tab = (location.hash.split('/')[1] || '').split('?')[0];
+        if (!tab) BB.pages.path(v); else if (tab === 'practice' && location.hash.split('/')[2]) BB.pages.setup(v, location.hash.split('/')[2].split('?')[0]);
+      }
     });
     ui.modal({ title: '⚙️ Settings', body });
   };

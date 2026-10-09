@@ -262,12 +262,13 @@
     fromSetup: (v) => poolOpts(v, { mode: v.mode, rounds: +v.rounds, poolKey: BB.pools.resolve(v.pool).key + ':' + v.mode }),
     run(body, opts, api) {
       let mode = opts.mode || 'tag';
+      if (!BB.askSummaries() && BB.SUMMARY_OPTIONS.has(mode)) mode = 'number';
       const per = opts.per || 5;
       let books = U.shuffle(opts.books);
       let groups = [];
       if (mode === 'section') {
         const secs = new Set(books.map((n) => BB.book(n).sec));
-        if (secs.size < 2) { mode = 'tag'; ui.toast('Only one section here — matching summaries instead.'); }
+        if (secs.size < 2) { mode = BB.askSummaries() ? 'tag' : 'number'; ui.toast(`Only one section here — matching ${mode === 'tag' ? 'summaries' : 'numbers'} instead.`); }
         else {
           const R = opts.rounds || 3;
           for (let r = 0; r < R; r++) {
