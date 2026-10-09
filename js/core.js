@@ -349,11 +349,11 @@
     },
     pop(el) {
       if (!el || !el.animate) return;
-      el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+      el.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out', composite: 'add' });
     },
     shake(el) {
       if (!el || !el.animate) return;
-      el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(7px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+      el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-7px)' }, { transform: 'translateX(7px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(0)' }], { duration: 320, composite: 'add' });
     },
     burst(el) {
       if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -411,7 +411,7 @@
       if (!actions.length) acts.remove();
       const close = () => {
         m.classList.add('out');
-        setTimeout(() => m.remove(), 180);
+        setTimeout(() => { m.remove(); ui.scrollLock(); }, 180);
         document.removeEventListener('keydown', onKey);
         onClose && onClose();
       };
@@ -424,9 +424,28 @@
       document.addEventListener('keydown', onKey);
       m.addEventListener('click', (e) => { if (!locked && (e.target === m || e.target.closest('[data-close]'))) close(); });
       document.body.appendChild(m);
+      ui.scrollLock();
       const f = U.$('input, textarea, .btn.primary', m);
       if (f) setTimeout(() => f.focus(), 50);
       return { el: m, body: bodyEl, close };
+    },
+    /**
+     * Freeze the page behind open popups. Uses position:fixed on <body> (not just overflow:hidden)
+     * so it also holds on iOS Safari; the scroll position is restored when the last popup closes.
+     */
+    scrollLock() {
+      const b = document.body;
+      const open = !!document.querySelector('.modal-back:not(.out)');
+      if (open && !b.classList.contains('scroll-locked')) {
+        b.dataset.lockY = window.scrollY;
+        b.style.top = `-${window.scrollY}px`;
+        b.classList.add('scroll-locked');
+      } else if (!open && b.classList.contains('scroll-locked')) {
+        const y = +b.dataset.lockY || 0;
+        b.classList.remove('scroll-locked');
+        b.style.top = '';
+        window.scrollTo(0, y);
+      }
     },
     confirm(msg, okLabel = 'Yes', cancelLabel = 'Cancel') {
       return new Promise((res) => {

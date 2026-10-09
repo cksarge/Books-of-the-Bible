@@ -16,6 +16,7 @@
   BB.router = function () {
     BB.setCleanup(null);
     U.$$('.modal-back:not(.locked)').forEach((m) => m.remove());
+    BB.ui.scrollLock();
     if (!S.data.seenWelcome && !U.$('.modal-back.locked')) BB.showWelcome();
     document.body.classList.remove('in-activity');
     const view = U.$('#view');
@@ -26,6 +27,7 @@
     U.$$('[data-tab]').forEach((a) => a.classList.toggle('active', a.dataset.tab === (tab === 'stop' ? 'path' : tab)));
     BB.updateHeader();
     window.scrollTo(0, 0);
+    if (document.body.classList.contains('scroll-locked')) { document.body.dataset.lockY = 0; document.body.style.top = '0px'; }
     const P = BB.pages;
     switch (tab) {
       case 'path': return P.path(view);
