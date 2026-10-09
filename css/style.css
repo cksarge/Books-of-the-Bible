@@ -219,6 +219,8 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 @keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } }
 .modal-back { position: fixed; inset: 0; z-index: 150; background: rgba(15, 18, 28, .5); display: flex; align-items: flex-end; justify-content: center; animation: fade-in .18s; }
 .modal-back.out { opacity: 0; transition: opacity .18s; }
+body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
+.modal-back, .modal { overscroll-behavior: contain; }
 .modal { background: var(--surface); width: 100%; max-width: 520px; max-height: 88vh; overflow: auto; border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); box-shadow: var(--shadow-lg); animation: sheet-up .25s cubic-bezier(.2,.9,.3,1.1); }
 .modal.wide { max-width: 720px; }
 .modal-head { display: flex; align-items: flex-start; gap: 8px; }
@@ -485,7 +487,7 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .qfeedback.good .fb-title { color: var(--good); }
 .qfeedback.bad .fb-title { color: var(--bad); }
 .fb-info { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
-.daily-intro { margin-bottom: 8px; line-height: 2; }
+.daily-intro .chips { justify-content: center; margin: 4px 0 20px; }
 
 /* ---------- flashcards ---------- */
 .flash { display: grid; justify-items: center; gap: 12px; }

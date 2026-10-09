@@ -316,11 +316,21 @@
       const targets = S.weakest(pool, Math.min(10, pool.length));
       const qs = BB.quiz.gen({ books: pool, targets, n: 15, format: 'mixed', types: Object.keys(TYPES) });
       const streak = S.streak();
-      body.appendChild(U.el(`<div class="daily-intro muted small">Focus books: ${targets.map((n) => ui.chip(n, { abbr: true })).join(' ')} ${streak ? ` · 🔥 ${streak}-day streak` : ''}</div>`));
-      BB.quiz.play(body, qs, {
-        api, timeLimit: 300,
-        onDone(results) { api.finish(BB.quiz.summarize(results)); },
-      });
+      // focus books are shown only before starting, so they can't be used as hints during the questions
+      const intro = U.el(`<div class="card center part-intro daily-intro">
+        <div class="part-icon">🔥</div><h2>Today's review</h2>
+        <p class="muted">${qs.length} questions · about 5 minutes${streak ? ` · ${streak}-day streak` : ''}</p>
+        <p><b>Focus books</b> <span class="muted small">— the ones you find hardest right now</span></p>
+        <div class="chips">${targets.map((n) => ui.chip(n)).join('')}</div>
+        <button class="btn primary big">Start review</button></div>`);
+      body.appendChild(intro);
+      U.$('button', intro).onclick = () => {
+        intro.remove();
+        BB.quiz.play(body, qs, {
+          api, timeLimit: 300,
+          onDone(results) { api.finish(BB.quiz.summarize(results)); },
+        });
+      };
     },
   });
 })();

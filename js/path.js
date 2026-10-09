@@ -231,7 +231,7 @@
     }));
     U.$$('.node', view).forEach((n) => (n.onclick = () => {
       const s = MAP[n.dataset.id];
-      if (!BB.path.unlocked(s)) { BB.fx.shake(n); BB.sfx('bad'); ui.toast('🔒 Finish the previous stop to unlock this one'); return; }
+      if (!BB.path.unlocked(s)) { BB.fx.shake(U.$('.node-ico', n)); BB.sfx('bad'); ui.toast('🔒 Finish the previous stop to unlock this one'); return; }
       const rec = S.stop(s.id);
       ui.modal({
         title: `${s.icon} ${U.esc(s.title)}`,
