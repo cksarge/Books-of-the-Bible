@@ -375,6 +375,13 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 .result-stats b { display: block; font-size: 1.35rem; }
 .result-stats span { font-size: .78rem; color: var(--muted); font-weight: 700; }
 .badge-best, .badge-unlock { display: inline-block; margin: 4px; padding: 6px 14px; border-radius: 99px; font-weight: 800; background: var(--gold-soft); color: color-mix(in srgb, var(--gold) 50%, var(--text)); }
+.badge-fixed { display: inline-block; margin: 4px; padding: 6px 14px; border-radius: 99px; font-weight: 800; background: var(--bg-2); color: var(--text); }
+.fixed-tag { font-size: .78rem; font-weight: 800; color: color-mix(in srgb, var(--gold) 55%, var(--text)); background: var(--gold-soft); padding: 1px 7px; border-radius: 6px; }
+.srow.redo { border-left-color: var(--gold); background: var(--gold-soft); }
+.srow.ok.fixed { border-left-color: var(--gold); }
+.srow.ok.fixed .input { border-color: var(--gold); background: var(--gold-soft); }
+.srow.ok.fixed .sanswer { color: color-mix(in srgb, var(--gold) 55%, var(--text)); }
+.quiz.fixing .qcard { border: 2px dashed var(--gold); }
 .badge-unlock { background: var(--good-soft); color: var(--good); animation: pop-in .4s ease-out .9s both; }
 .missed { margin: 16px 0; padding-top: 14px; border-top: 1px dashed var(--line-strong); }
 .missed h4 { font-family: var(--font); font-weight: 800; }

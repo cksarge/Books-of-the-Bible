@@ -83,7 +83,9 @@
           const perfect = r.correct === r.total;
           BB.sfx(perfect ? 'good' : r.correct ? 'tap' : 'bad');
           if (perfect) BB.fx.burst(check);
-          bar.innerHTML = `<div class="round-score ${perfect ? 'good' : ''}">${perfect ? '🎉 Perfect!' : `${r.correct} of ${r.total} correct`}${r.hinted ? ` · ${r.hinted} with hints` : ''}</div>`;
+          const scoreText = `${r.correct} of ${r.total} correct${r.hinted ? ` · ${r.hinted} with hints` : ''}`;
+          if (!perfect) return BB.fixLoop(sheet, bar, { intro: scoreText, onDone: after || next });
+          bar.innerHTML = `<div class="round-score good">🎉 Perfect!${r.hinted ? ` · ${r.hinted} with hints` : ''}</div>`;
           const nb = U.el('<button class="btn primary big">Continue →</button>');
           nb.onclick = after || next;
           bar.appendChild(nb);
@@ -159,8 +161,10 @@
             cb.onclick = () => {
               const g = sh.grade();
               g.items.forEach((it) => api.record(it.n, it.ok, it.hinted));
-              cb.replaceWith(U.el(`<div class="round-score ${g.correct === g.total ? 'good' : ''}">${g.correct} of ${g.total} correct now</div>`));
-              if (g.correct === g.total) BB.sfx('good');
+              const bar2 = U.el('<div class="row-btns"></div>');
+              cb.replaceWith(bar2);
+              if (g.correct === g.total) { bar2.innerHTML = '<div class="round-score good">✓ All correct now</div>'; BB.sfx('good'); }
+              else BB.fixLoop(sh, bar2, { intro: `${g.correct} of ${g.total} correct`, onDone: () => (bar2.innerHTML = '<div class="round-score good">✓ All fixed!</div>'), doneLabel: 'Done' });
             };
           };
           U.$('.fin', body).onclick = () => api.finish({ correct: score.correct, total: score.total, hinted: score.hinted, missed: ms });
@@ -315,15 +319,17 @@
           last = g;
           const perfect = g.correct === g.total;
           BB.sfx(perfect ? 'good' : 'tap');
-          bar.innerHTML = `<div class="round-score ${perfect ? 'good' : ''}">${perfect ? '🎉 Perfect round!' : `${g.correct} of ${g.total} correct`}</div>`;
-          const nb = U.el(`<button class="btn primary big">${isLast ? 'See results' : 'Next round →'}</button>`);
-          bar.appendChild(nb);
-          nb.focus({ preventScroll: true });
-          nb.onclick = () => {
+          const proceed = () => {
             if (isLast) return api.finish({ correct: last.correct, total: last.total, hinted: last.hinted, missed: last.items.filter((i) => !i.ok).map((i) => i.n) });
             r++;
             round();
           };
+          if (!perfect) return BB.fixLoop(sheet, bar, { intro: `${g.correct} of ${g.total} correct`, onDone: proceed, doneLabel: isLast ? 'See results' : 'Next round →' });
+          bar.innerHTML = '<div class="round-score good">🎉 Perfect round!</div>';
+          const nb = U.el(`<button class="btn primary big">${isLast ? 'See results' : 'Next round →'}</button>`);
+          bar.appendChild(nb);
+          nb.focus({ preventScroll: true });
+          nb.onclick = proceed;
         };
       };
       round();
@@ -357,8 +363,9 @@
       upd();
       sheet.focus();
       const t0 = performance.now();
+      let clockH = null;
       if (opts.timer && opts.timer !== 'off') {
-        api.interval(() => {
+        clockH = api.interval(() => {
           const el = performance.now() - t0;
           if (limit) {
             const left = limit - el;
@@ -374,11 +381,19 @@
         const blanks = sheet.blanks();
         if (!force && blanks && !(await ui.confirm(`${blanks} blank${blanks === 1 ? '' : 's'} left. Submit anyway?`, 'Submit', 'Keep writing'))) return;
         submitted = true;
+        clearInterval(clockH);
         const g = sheet.grade();
         g.items.forEach((it) => api.record(it.n, it.ok, it.hinted));
         const timeMs = performance.now() - t0;
-        sheet.el.remove();
-        api.finish({ correct: g.correct, total: g.total, hinted: g.hinted, missed: g.items.filter((i) => !i.ok).map((i) => i.n), timeMs, details: U.el('<div><h3 class="details-h">Your sheet</h3></div>').appendChild(sheet.el).parentNode });
+        const done = () => {
+          sheet.el.remove();
+          api.finish({ correct: g.correct, total: g.total, hinted: g.hinted, missed: g.items.filter((i) => !i.ok).map((i) => i.n), timeMs, details: U.el('<div><h3 class="details-h">Your sheet</h3></div>').appendChild(sheet.el).parentNode });
+        };
+        if (g.correct === g.total) return done();
+        bar.innerHTML = '';
+        BB.fixLoop(sheet, bar, { intro: `${g.correct} of ${g.total} correct`, onDone: done, doneLabel: 'See results' });
+        const firstBad = U.$('.srow.bad', sheet.el);
+        if (firstBad) firstBad.scrollIntoView({ block: 'center', behavior: 'smooth' });
       };
       U.$('button', bar).onclick = () => submit();
     },

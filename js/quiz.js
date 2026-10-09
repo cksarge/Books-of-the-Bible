@@ -94,8 +94,12 @@
      * o: { api, strict, lives, perSec, timeLimit (sec), boss (name), onDone(results, meta) }
      */
     play(container, qs, o) {
+      // Missed questions are queued again at the end until answered correctly.
+      // Only first attempts count for score and stats; retries are practice.
       const api = o.api;
-      const results = [];
+      const redo = o.redo !== false;
+      const results = []; // one entry per original question (first attempt), plus tries
+      const queue = qs.map((q) => ({ q, retry: false }));
       let i = 0, lives = o.lives || 0, ended = false;
       const tStart = performance.now();
       const wrap = U.el(`<div class="quiz">
@@ -128,12 +132,15 @@
 
       const show = () => {
         if (ended) return;
-        const q = qs[i];
+        const item = queue[i];
+        const q = item.q;
         wrap._q = q;
-        api.progress(i / qs.length);
-        $('.qcount').textContent = `Question ${i + 1} of ${qs.length}`;
+        wrap.classList.toggle('fixing', item.retry);
+        api.progress(i / queue.length);
+        $('.qcount').textContent = item.retry || o.fixPhase ? `🔁 Fix your mistakes · ${queue.length - i} left` : `Question ${i + 1} of ${qs.length}`;
         drawLives();
-        $('.qtype').textContent = q.label;
+        if (o.perSec) $('.qtimer').hidden = item.retry;
+        $('.qtype').textContent = item.retry ? `Try again · ${q.label}` : q.label;
         $('.qprompt').innerHTML = q.prompt;
         $('.qfeedback').innerHTML = '';
         $('.qfeedback').className = 'qfeedback';
@@ -144,22 +151,24 @@
           if (answered) return;
           answered = true;
           clearInterval(qTimer);
-          finishQ(q, ok, hinted, givenLabel);
+          finishQ(item, ok, hinted, givenLabel);
         };
         if (q.format === 'mc') {
           const grid = U.el('<div class="mc"></div>');
-          q.options.forEach((v, k) => {
+          const opts = item.retry ? U.shuffle(q.options) : q.options;
+          opts.forEach((v, k) => {
             const sec = q.kind === 'sec' ? v : null;
             const b = U.el(`<button class="mc-opt" ${sec ? `data-sec="${sec}"` : ''}><span class="key">${k + 1}</span>${U.esc(label(q, v))}</button>`);
             b.onclick = () => {
               if (answered) return;
               const ok = v === q.answer;
               b.classList.add(ok ? 'ok' : 'bad');
-              U.$$('.mc-opt', grid).forEach((x, j) => { x.disabled = true; if (q.options[j] === q.answer) x.classList.add('ok'); });
+              U.$$('.mc-opt', grid).forEach((x, j) => { x.disabled = true; if (opts[j] === q.answer) x.classList.add('ok'); });
               submit(v, ok, false, label(q, v));
             };
             grid.appendChild(b);
           });
+          wrap._opts = opts;
           ans.appendChild(grid);
         } else {
           const box = ui.typed({
@@ -171,7 +180,8 @@
               let ok, gl = text.trim();
               if (q.kind === 'num') ok = parseInt(text, 10) === q.answer;
               else {
-                const id = api.strict ? BB.match.strictIdentify(text) : BB.match.identify(text);
+                const strict = o.strict != null ? o.strict : api.strict;
+                const id = strict ? BB.match.strictIdentify(text) : BB.match.identify(text);
                 ok = id === q.answer;
                 if (id) gl = BB.book(id).name;
               }
@@ -182,7 +192,7 @@
           });
           ans.appendChild(box);
         }
-        if (o.perSec) {
+        if (o.perSec && !item.retry) {
           const bar = $('.qtimer i');
           const t0 = performance.now();
           bar.style.width = '100%';
@@ -195,40 +205,59 @@
               if (!answered) {
                 answered = true;
                 U.$$('button, input', ans).forEach((x) => (x.disabled = true));
-                finishQ(q, false, false, '⏱ time ran out');
+                finishQ(item, false, false, '⏱ time ran out');
               }
             }
           }, 100);
         }
       };
 
-      const finishQ = (q, ok, hinted, givenLabel) => {
-        results.push({ q, ok, hinted: ok && hinted, given: givenLabel });
-        api.record(q.target, ok, hinted);
+      const finishQ = (item, ok, hinted, givenLabel) => {
+        const q = item.q;
+        let entry;
+        if (!item.retry) {
+          entry = { q, ok, hinted: ok && hinted, given: givenLabel, tries: 1 };
+          results.push(entry);
+          q._entry = entry;
+          if (!o.noRecord) api.record(q.target, ok, hinted);
+        } else {
+          entry = q._entry;
+          entry.tries++;
+          if (ok) entry.fixedAfter = entry.tries;
+        }
         const fb = $('.qfeedback');
         const ansHtml = q.kind === 'sec' ? ui.secChip(q.answer) : q.kind === 'num' ? `<b>#${q.answer}</b>` : ui.chip(q.answer, { num: true });
         const b = BB.book(q.target);
         if (ok) {
-          correctCount++;
+          if (!item.retry) correctCount++;
           BB.sfx('good');
           BB.fx.burst($('.qcard'));
           fb.className = 'qfeedback good';
-          fb.innerHTML = `<div class="fb-title">✓ ${U.pick(['Correct!', 'Yes!', 'Nailed it!', 'Exactly!', 'Well done!'])}${hinted ? ' <span class="muted">(with hint)</span>' : ''}</div>
+          const title = item.retry ? `Correct after ${entry.tries} tries` : U.pick(['Correct!', 'Yes!', 'Nailed it!', 'Exactly!', 'Well done!']);
+          fb.innerHTML = `<div class="fb-title">✓ ${title}${hinted && !item.retry ? ' <span class="muted">(with hint)</span>' : ''}</div>
             <div class="fb-info">${ui.chip(q.target, { num: true })} <span class="muted">${U.esc(BB.sec(b.sec).name)} · ${U.esc(b.tag)}</span></div>`;
-          if (o.boss) $('.hp i').style.width = (1 - correctCount / qs.length) * 100 + '%';
+          if (o.boss && !item.retry) $('.hp i').style.width = (1 - correctCount / qs.length) * 100 + '%';
         } else {
           BB.sfx('bad');
           BB.fx.shake($('.qcard'));
-          if (o.lives) lives--;
+          if (o.lives && !item.retry) lives--;
           drawLives();
           fb.className = 'qfeedback bad';
           fb.innerHTML = `<div class="fb-title">✗ Not quite${givenLabel ? ` — you said <i>${U.esc(givenLabel)}</i>` : ''}</div>
-            <div class="fb-info">Answer: ${ansHtml} <span class="muted">${q.kind === 'book' ? U.esc(b.tag) : ''}</span></div>`;
+            <div class="fb-info">Answer: ${ansHtml} <span class="muted">${q.kind === 'book' ? U.esc(b.tag) : ''}</span></div>
+            ${redo ? '<div class="muted small">This one will come back at the end so you can get it right.</div>' : ''}`;
         }
         const outOfLives = o.lives && lives <= 0;
-        const outOfTime = o.timeLimit && performance.now() - tStart > o.timeLimit * 1000;
-        const last = i === qs.length - 1 || outOfLives || outOfTime;
-        const nb = U.el(`<button class="btn primary next-btn">${last ? 'See results' : 'Next →'}</button>`);
+        if (!ok && redo && !outOfLives) queue.push({ q, retry: true });
+        // when the time limit is up, skip new questions but still fix the missed ones
+        if (o.timeLimit && performance.now() - tStart > o.timeLimit * 1000) {
+          const rest = queue.slice(i + 1).filter((x) => x.retry);
+          queue.length = i + 1;
+          queue.push(...rest);
+        }
+        const last = i >= queue.length - 1 || outOfLives;
+        const nextIsFix = !last && queue[i + 1].retry && !item.retry;
+        const nb = U.el(`<button class="btn primary next-btn">${last ? 'See results' : nextIsFix ? 'Fix your mistakes →' : 'Next →'}</button>`);
         fb.appendChild(nb);
         const go = () => {
           clearTimeout(advanceT);
@@ -241,7 +270,7 @@
         nb.onclick = go;
         setTimeout(() => { document.addEventListener('keydown', key); nb.focus({ preventScroll: true }); }, 60);
         api.onCleanup(() => document.removeEventListener('keydown', key));
-        if (ok && !last) advanceT = setTimeout(go, 1300);
+        if (ok && !last && !nextIsFix) advanceT = setTimeout(go, 1300);
       };
 
       const mcKey = (e) => {
@@ -270,7 +299,7 @@
       const details = `<div class="review-list"><h3 class="details-h">Answers</h3>${results
         .map((r, k) => `<div class="review-item ${r.ok ? 'ok' : 'bad'}"><span class="ri-mark">${r.ok ? (r.hinted ? '💡' : '✓') : '✗'}</span>
           <div><div class="ri-q">${k + 1}. ${r.q.prompt.replace(/<blockquote>.*<\/blockquote>/, ' <span class="muted">“' + U.esc(BB.redact(r.q.target).slice(0, 70)) + '…”</span>')}</div>
-          <div class="ri-a">${r.ok ? '' : `<span class="muted">You:</span> ${U.esc(r.given || '—')} · `}<span class="muted">Answer:</span> <b>${U.esc(label(r.q, r.q.answer))}</b></div></div></div>`)
+          <div class="ri-a">${r.ok ? '' : `<span class="muted">You:</span> ${U.esc(r.given || '—')} · `}<span class="muted">Answer:</span> <b>${U.esc(label(r.q, r.q.answer))}</b>${r.fixedAfter ? ` <span class="fixed-tag">fixed on try ${r.fixedAfter}</span>` : ''}</div></div></div>`)
         .join('')}</div>`;
       return Object.assign({ correct, total: extra.total || asked, hinted, missed, details }, extra);
     },

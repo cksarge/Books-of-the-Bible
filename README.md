@@ -66,6 +66,14 @@ It's plain HTML, CSS, and JavaScript, with no build step, no dependencies, and n
 - Unscramble
 - Section Boss Round
 
+**Fixing mistakes.** Anything you get wrong comes back before you can finish:
+
+- Missed quiz questions (Mini Quiz, Daily Review, lesson checks, reviews, boss rounds) return at the end until you answer them correctly ("Correct after 2 tries").
+- On recite sheets (lessons, Fading List, Test Simulation, finals), you see the right answers, then retype the missed rows from memory until they're all right.
+- Games end with a short "Fix your mistakes" round on each missed book.
+
+Only your first attempt counts toward stars, scores, and stats.
+
 **Answer checking.** Answers ignore capitalization. They also accept:
 
 - Abbreviations
