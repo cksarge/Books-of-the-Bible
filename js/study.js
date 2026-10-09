@@ -344,7 +344,7 @@
     title: 'Test Simulation', icon: '📝', kind: 'quiz',
     desc: 'A blank numbered sheet you fill in from memory, then get graded. Optional timer and strict spelling.',
     setup: [
-      { key: 'pool', type: 'pool', label: 'Sheet', def: 'all' },
+      { key: 'pool', type: 'pool', label: 'Sheet', def: 'all', custom: true },
       { key: 'timer', type: 'seg', label: 'Timer', options: [['off', 'Off'], ['up', 'Stopwatch'], ['5', '5 min'], ['10', '10 min'], ['15', '15 min']], def: 'up' },
       { key: 'strict', type: 'toggle', label: 'Strict spelling', hint: 'Only exact names count (no abbreviations, variants, or typos).' },
       { key: 'hints', type: 'toggle', label: 'Allow first-letter hints', def: true },

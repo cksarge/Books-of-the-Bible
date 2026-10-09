@@ -535,8 +535,11 @@
       else if (key && key.startsWith('range:')) { [from, to] = key.slice(6).split('-').map(Number); label = `Books ${from}–${to}`; }
       return { key, from, to, label, books: U.range(from, to) };
     },
-    select(value, name = 'pool') {
-      return `<select class="input" name="${name}">${this.options().map((g) => `<optgroup label="${g.group}">${g.items.map(([v, l]) => `<option value="${v}"${v === value ? ' selected' : ''}>${U.esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+    select(value, name = 'pool', custom = false) {
+      const groups = this.options();
+      if (custom) groups.push({ group: 'Custom', items: [['custom', 'Custom range…']] });
+      if (custom && String(value).startsWith('range:')) value = 'custom';
+      return `<select class="input" name="${name}">${groups.map((g) => `<optgroup label="${g.group}">${g.items.map(([v, l]) => `<option value="${v}"${v === value ? ' selected' : ''}>${U.esc(l)}</option>`).join('')}</optgroup>`).join('')}</select>`;
     },
   };
 
