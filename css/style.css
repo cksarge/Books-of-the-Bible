@@ -288,11 +288,15 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .nc-text span { color: var(--muted); font-size: .88rem; }
 .nc-go { font-weight: 800; color: var(--c-ink, var(--accent)); white-space: nowrap; }
 .path { position: relative; max-width: 560px; margin: 0 auto; }
-.stage-banner {
+.stage-banner { scroll-margin-top: calc(var(--topbar) + 12px);
   display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 18px; border-radius: 18px; color: #fff; margin: 26px 0 6px;
   background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 70%, #101828)); box-shadow: 0 6px 0 color-mix(in srgb, var(--c) 55%, #000), var(--shadow);
 }
 .stage-banner h2 { margin: 2px 0; font-size: 1.3rem; color: #fff; }
+.stage-banner.final-stage {
+  background: linear-gradient(135deg, #1f3a5f, #4b2a6e 55%, #a0661a); box-shadow: 0 6px 0 #10203a, var(--shadow);
+}
+.stage-banner.final-stage h2::before { content: '🏁 '; }
 .sb-num { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; opacity: .85; }
 .sb-sub { font-size: .88rem; opacity: .92; }
 .sb-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }

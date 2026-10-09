@@ -15,12 +15,13 @@ It's plain HTML, CSS, and JavaScript, with no build step, no dependencies, and n
 
 ## What's inside
 
-**The Path (home screen).** A winding map with 90 stops from Genesis to Revelation:
+**The Path (home screen).** A winding map with 106 stops from Genesis to Revelation:
 
 - 13 stages, one per section. Long sections are split into chunks of 4–8 books (for example, Historical Books is split into three stages and Prophets into three).
 - Each stage has these stops: Lesson → Flashcards → Mini Quiz → two games → a **Section Boss Round**.
 - Review stops between stages mix in books from earlier stages, weighted toward the ones you miss.
-- There are two checkpoints, both using the test simulation: an **Old Testament Final** (books 1–46) and the **Grand Final** (all 73).
+- An **Old Testament Final** checkpoint (books 1–46) comes after the Prophets.
+- **Stages 14 and 15, Final Review Part 1 and Part 2,** cover all 73 books with different mixes of games and tools. Part 1's boss is a rapid-fire round followed by a survival streak from Genesis to Revelation. Part 2's boss is the **Grand Finale**: write all 73 from memory.
 - Each stop earns up to 3 stars (50% / 70% / 90% accuracy). Finishing a stop unlocks the next one, and you can replay any stop.
 
 **Learn mode (lessons).** A lesson walks you through:

@@ -91,14 +91,49 @@
       desc: `Rapid-fire typed questions on books ${bf}–${st.to} (3 lives, 30 s each), then recite them all from memory.`,
       act: 'seq', build: () => ({ parts: BB.bossParts(bf, st.to, bname) }) });
   });
-  add({ id: 'final-all', type: 'final', stage: null, sec: null, icon: '🏆', title: 'Grand Final: All 73', checkpoint: 'Grand Finale',
-    desc: 'Test simulation: write all 73 books of the Catholic Bible from memory.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: true }) });
+
+  /* Final review: two stages over all 73 books, each with a different mix of games and tools. */
+  const ALL = U.range(1, 73);
+  const FINAL_STAGES = [
+    { id: 'fr1', num: 14, title: 'Final Review · Part 1', from: 1, to: 73, books: ALL, sec: null, final: true },
+    { id: 'fr2', num: 15, title: 'Final Review · Part 2', from: 1, to: 73, books: ALL, sec: null, final: true },
+  ];
+  const frStop = (st, key, act, title, desc, build, extra = {}) =>
+    add(Object.assign({ id: `${st.id}-${key}`, type: 'game', stage: st, sec: null, icon: BB.acts[act].icon, title, desc, act, build }, extra));
+  const [fr1, fr2] = FINAL_STAGES;
+  frStop(fr1, 'flash', 'flash', 'Weak Spots', 'Flashcards for the 15 books you find hardest right now, in mixed modes.', () => ({ books: S.weakest(ALL, 15), mode: 'mixed', shuffle: true }), { type: 'flash' });
+  frStop(fr1, 'quiz', 'quiz', 'Mixed Quiz', '15 mixed questions drawn from all 73 books, weighted toward the ones you miss.', () => ({ books: ALL, n: 15, format: 'mixed', types: ALL_TYPES }), { type: 'quiz' });
+  frStop(fr1, 'sort', 'sort', 'Sort It', 'Drop 20 books from across the Bible into their sections.', () => ({ books: ALL, n: 20 }));
+  frStop(fr1, 'order', 'order', 'Put in Order', 'Three rounds of seven books from anywhere in the Bible.', () => ({ books: ALL, size: 7, rounds: 3 }));
+  frStop(fr1, 'missing', 'missing', 'Missing Book', 'Eight runs of books from Genesis to Revelation, each with one gap.', () => ({ from: 1, to: 73, n: 8, runLen: 5 }));
+  frStop(fr1, 'odd', 'odd', 'Odd One Out', 'Eight rounds: spot the book from a different section.', () => ({ books: ALL, n: 8 }));
+  frStop(fr1, 'mystery', 'mystery', 'Mystery Book', 'Three hidden books from anywhere in the Bible.', () => ({ books: ALL, rounds: 3 }));
+  frStop(fr1, 'shelf', 'shelf', 'Bookshelf', 'All 73 books on the shelf with 15 gaps to fill.', () => ({ from: 1, to: 73, gaps: U.weightedSample(ALL, (n) => S.weight(n), 15) }));
+  add({ id: 'fr1-boss', type: 'boss', stage: fr1, sec: null, icon: '👑', title: 'Boss: The Whole Bible',
+    desc: 'Rapid-fire typed questions on all 73 books (3 lives, 30 s each), then a survival streak from Genesis to Revelation.',
+    act: 'seq', build: () => ({ parts: [
+      { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: '12 typed questions from anywhere in the Bible. 3 lives, 30 seconds each.',
+        opts: { books: ALL, n: 12, format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: 'The Whole Bible' }, weight: 72 },
+      { id: 'survival', icon: '❤️', label: 'Survival: Genesis to Revelation', blurb: 'Name every book in order from Genesis onward. Three lives — go all the way!', opts: { start: 1, end: 73 } },
+    ] }) });
+
+  frStop(fr2, 'flash', 'flash', 'Summary Cards', 'Read a summary, name the book — 15 cards weighted toward your weak spots.', () => ({ books: S.weakest(ALL, 15), mode: 'summary-name', shuffle: true }), { type: 'flash' });
+  frStop(fr2, 'match', 'match', 'Memory Match', 'Pair books from across the Bible with their sections.', () => ({ books: ALL, mode: 'section', rounds: 3 }));
+  frStop(fr2, 'first', 'first', 'Which Comes First?', '15 quick head-to-heads from anywhere in the Bible.', () => ({ books: ALL, n: 15 }));
+  frStop(fr2, 'hood', 'hood', 'Neighborhood', 'Name the books on either side of 8 books from across the Bible.', () => ({ books: ALL, n: 8 }));
+  frStop(fr2, 'unscramble', 'unscramble', 'Unscramble', 'Eight of the trickiest spellings in the Bible.', () => ({ books: ALL, n: 8 }));
+  frStop(fr2, 'quiz', 'quiz', 'Typed Quiz', '15 typed questions on all 73 books — no multiple choice this time.', () => ({ books: ALL, n: 15, format: 'typed', types: ['after', 'before', 'number', 'numberOf', 'teaches'] }), { type: 'quiz' });
+  frStop(fr2, 'speed', 'speed', 'Speed Recall', 'Type all 73 from memory against the clock, in any order.', () => ({ from: 1, to: 73 }));
+  // keeps its old id so earlier progress on the Grand Final carries over
+  add({ id: 'final-all', type: 'final', stage: fr2, sec: null, icon: '🏆', title: 'Grand Finale',
+    desc: 'The final boss: write all 73 books of the Catholic Bible from memory on a blank numbered sheet.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: true }) });
 
   const MAP = {};
   stops.forEach((s) => (MAP[s.id] = s));
 
   BB.path = {
     stops, MAP,
+    STAGES: BB.STAGES.concat(FINAL_STAGES),
     pendingUnlock: null,
     next: (id) => stops[MAP[id].index + 1] || null,
     unlocked: (s) => s.index === 0 || S.stop(stops[s.index - 1].id).stars > 0,
@@ -124,8 +159,9 @@
     let cur = null;
     stops.forEach((s) => {
       const st = s.stage || s.beforeStage;
-      const key = s.type === 'final' ? s.id : st.id;
-      if (!cur || cur.key !== key) { cur = { key, stage: s.type === 'final' ? null : st, final: s.type === 'final' ? s : null, stops: [] }; out.push(cur); }
+      const solo = s.type === 'final' && !s.stage; // a checkpoint between stages
+      const key = solo ? s.id : st.id;
+      if (!cur || cur.key !== key) { cur = { key, stage: solo ? null : st, final: solo ? s : null, stops: [] }; out.push(cur); }
       cur.stops.push(s);
     });
     return out;
@@ -141,12 +177,6 @@
     const lessonDone = (st) => S.stop(st.id + '-lesson').stars > 0;
 
     let html = '';
-    if (!S.data.seenWelcome) {
-      html += `<div class="welcome card"><h2>Welcome to Seventy-Three 👋</h2>
-        <p>Learn all <b>73 books of the Catholic Bible</b> in order — which section each belongs to and what each one teaches. Follow the path from Genesis to Revelation: every stop unlocks the next and earns up to three stars.</p>
-        <p class="muted small">Your progress is saved on this device. No account needed.${S.memoryOnly ? ' <b>(Storage is blocked in this browser, so progress will reset when you leave.)</b>' : ''}</p>
-        <button class="btn primary dismiss">Let's go</button></div>`;
-    }
     html += `<div class="path-hero">
       <div class="hero-top"><div><div class="eyebrow">Your journey</div><h1>Genesis → Revelation</h1></div>
         <div class="hero-stats"><span title="Stars">★ <b>${total}</b><small>/${BB.path.maxStars}</small></span><span title="Stops completed">📍 <b>${BB.path.done()}</b><small>/${stops.length}</small></span><span title="Daily streak">🔥 <b>${streak}</b></span></div></div>
@@ -165,9 +195,10 @@
         const st = g.stage;
         const stops2 = g.stops.filter((s) => s.stage);
         const got = stops2.reduce((a, s) => a + S.stop(s.id).stars, 0);
-        html += `<div class="stage-banner" data-sec="${st.sec}"><div class="sb-left"><div class="sb-num">Stage ${st.index + 1}</div><h2>${U.esc(st.title)}</h2>
-          <div class="sb-sub">${U.esc(BB.sec(st.sec).name)}${st.to > BB.sec(st.sec).to ? ' & ' + U.esc(BB.sec(BB.book(st.to).sec).name) : ''} · books ${st.from}–${st.to}</div></div>
-          <div class="sb-right"><span class="sb-stars">★ ${got}/${stops2.length * 3}</span><button class="btn small ghost-light sb-ref" data-stage="${st.id}">Books</button></div></div>`;
+        const sub = st.final ? 'All 73 books · Genesis to Revelation' : `${U.esc(BB.sec(st.sec).name)}${st.to > BB.sec(st.sec).to ? ' & ' + U.esc(BB.sec(BB.book(st.to).sec).name) : ''} · books ${st.from}–${st.to}`;
+        html += `<div class="stage-banner ${st.final ? 'final-stage' : ''}" ${st.sec ? `data-sec="${st.sec}"` : ''}><div class="sb-left"><div class="sb-num">Stage ${st.final ? st.num : st.index + 1}</div><h2>${U.esc(st.title)}</h2>
+          <div class="sb-sub">${sub}</div></div>
+          <div class="sb-right"><span class="sb-stars">★ ${got}/${stops2.length * 3}</span>${st.final ? '<a class="btn small ghost-light" href="#/books">Books</a>' : `<button class="btn small ghost-light sb-ref" data-stage="${st.id}">Books</button>`}</div></div>`;
       }
       const ROW = 136;
       const pts = g.stops.map((s, k) => ({ s, x: 50 + 30 * Math.sin((gi + k) * 0.95), y: k * ROW + 78 }));
@@ -192,8 +223,6 @@
     html += '</div>';
     view.innerHTML = html;
 
-    const dm = U.$('.welcome .dismiss', view);
-    if (dm) dm.onclick = () => { S.data.seenWelcome = true; S.save(); U.$('.welcome', view).remove(); };
     const nc = U.$('button.next-card', view);
     if (nc) nc.onclick = () => BB.go('#/stop/' + current.id);
     U.$$('.sb-ref', view).forEach((b) => (b.onclick = () => {
