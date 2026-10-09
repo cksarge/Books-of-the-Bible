@@ -236,7 +236,8 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: .4; } }
 @keyframes pop-in { from { transform: scale(.94); opacity: 0; } }
-.info-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.info-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.info-tags > * { min-height: 28px; display: inline-flex; align-items: center; line-height: 1.2; }
 .info-tagline { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; }
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
 .fx-layer i { position: absolute; width: 9px; height: 13px; border-radius: 2px; }
@@ -299,12 +300,16 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
   background: linear-gradient(135deg, #1f3a5f, #4b2a6e 55%, #a0661a); box-shadow: 0 6px 0 #10203a, var(--shadow);
 }
 .stage-banner.final-stage h2::before { content: '🏁 '; }
+.stage-banner.checkpoint-stage {
+  background: radial-gradient(circle at 15% 0%, rgba(245, 191, 60, .22), transparent 55%), linear-gradient(135deg, #263048, #121726);
+  border: 2px solid #e8a91b; box-shadow: 0 6px 0 #6b4a0d, var(--shadow);
+}
+.stage-banner.checkpoint-stage .sb-num { color: #f5c75a; opacity: 1; }
+.stage-banner.checkpoint-stage h2::before { content: '🏆 '; }
 .sb-num { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; opacity: .85; }
 .sb-sub { font-size: .88rem; opacity: .92; }
 .sb-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .sb-stars { font-weight: 800; background: rgba(0,0,0,.18); padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
-.checkpoint { text-align: center; margin: 30px 0 4px; }
-.cp-label { display: inline-block; font-family: var(--serif); font-weight: 700; font-size: 1.15rem; padding: 8px 22px; border-radius: 99px; background: var(--gold-soft); border: 2px solid var(--gold); color: color-mix(in srgb, var(--gold) 50%, var(--text)); }
 .stops { position: relative; }
 .trail { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .trail path { fill: none; stroke: var(--line-strong); stroke-width: 7; stroke-dasharray: 2 12; stroke-linecap: round; vector-effect: non-scaling-stroke; }
