@@ -93,6 +93,9 @@ Strict spelling turns all of that off. Books you miss come up more often everywh
 
 ## Code map
 
+For developers (and Claude Code), `CLAUDE.md` documents the architecture, every design decision, and how to test.
+
+
 | File | What it holds |
 | --- | --- |
 | `js/data.js` | The 73 books (number, name, abbreviation, testament, section, deuterocanonical flag, summary), sections, path stages and mnemonics, timeline eras |
@@ -104,3 +107,4 @@ Strict spelling turns all of that off. Books you miss come up more often everywh
 | `js/path.js` | Path stops, boss and review builders, path map |
 | `js/pages.js` | Practice hub, setup forms, reference, timeline, mnemonics, progress, settings |
 | `js/app.js` | Router |
+| `tests/` | Optional Playwright tests: answer matching, a smoke test of every page and activity, and an auto-player that completes the whole path (`npm install`, then `npm test` or `npm run test:path`) |

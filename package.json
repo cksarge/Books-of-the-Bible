@@ -1,0 +1,15 @@
+{
+  "name": "seventy-three",
+  "private": true,
+  "description": "Seventy-Three: memorize the 73 books of the Catholic Bible. The site itself has no build step or dependencies; this file only sets up the optional tests.",
+  "scripts": {
+    "serve": "node tests/serve.js 8173",
+    "test": "node tests/match.test.js && node tests/smoke.js",
+    "test:match": "node tests/match.test.js",
+    "test:smoke": "node tests/smoke.js",
+    "test:path": "node tests/play-path.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}
