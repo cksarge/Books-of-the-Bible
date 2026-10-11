@@ -3,7 +3,8 @@
 A static website for memorizing the **73 books of the Catholic Bible** in order: which section each belongs to and roughly what each teaches. It's built for one owner (Carter) who uses it for real study, so the behavior choices recorded below came from hands-on feedback and matter. Keep them unless asked to change them.
 
 - **Live site:** https://73.carterscoding.com (GitHub Pages from `main`; the domain is set by `CNAME`, so don't delete or edit that file).
-- **Repo:** `cksarge/Books-of-the-Bible`. Earlier work happened on `claude/awesome-hawking-0c9wwo` and was merged into `main` through PRs #1–#3. The owner has asked for work to go **directly on `main`** now.
+- **Repo:** `cksarge/Books-of-the-Bible` (`origin`, over HTTPS). Work now happens in a local clone. Earlier work happened in a cloud session on `claude/awesome-hawking-0c9wwo` and was merged into `main` through PRs #1–#3. The owner has asked for work to go **directly on `main`** now.
+- **Pushing `main` deploys.** GitHub Pages publishes whatever is on `main`, so a push goes live within a minute or two. Run the checks below first.
 - **Stack:** plain HTML + CSS + vanilla JS. **No build step, no framework, no runtime dependencies.** Opening `index.html` straight from disk (`file://`) must keep working.
 
 ---
@@ -16,15 +17,15 @@ node tests/serve.js 8173        # then open http://127.0.0.1:8173
 # or just open index.html in a browser
 
 # tests (optional, need Node 18+)
-npm install                     # installs playwright (dev only)
-npx playwright install chromium # one-time browser download
+npm install                     # installs playwright (dev only; version pinned by package-lock.json)
+npx playwright install chromium # one-time browser download (repeat after a playwright upgrade)
 npm run test:match              # answer-matching unit tests (no browser)
 npm run test:smoke              # every page + every activity, phone + laptop, fails on JS errors
 npm run test:path               # auto-plays all 108 path stops (~10–25 min)
 WRONG=4 npm run test:path       # same, but misses every 4th first attempt (tests the fix-mistakes loops)
 ```
 
-Test screenshots and the final progress backup go to `tests/out/` (git-ignored).
+Test screenshots and the final progress backup go to `tests/out/` (git-ignored). `node_modules/` is git-ignored too; `package-lock.json` is committed. `MAXSTEPS=600 npm run test:path` is a quick partial run of the path.
 
 **Before every commit:** run `node --check js/*.js`, then `npm run test:match` and `npm run test:smoke`. For any change to the path, scoring, quizzes, sheets, or games, also run `npm run test:path` (and ideally `WRONG=4`).
 
