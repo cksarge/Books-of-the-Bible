@@ -24,7 +24,8 @@ window.__step = function () {
   const quiz = $('.quiz');
   if (quiz && quiz._q && !$('.qfeedback .fb-title', quiz)) {
     const q = quiz._q;
-    const bad = !q._entry && wrongNow();
+    // never miss on purpose on the last life, or a 12-question boss with 3 lives can never be beaten
+    const bad = !q._entry && $$('.lives i.on', quiz).length !== 1 && wrongNow();
     if (q.format === 'mc') { const opts = quiz._opts || q.options; const i = bad ? opts.findIndex((v) => v !== q.answer) : opts.indexOf(q.answer); $$('.mc-opt', quiz)[i].click(); return bad ? 'mc-WRONG' : 'mc'; }
     const inp = $('.qanswer input', quiz);
     const val = q.kind === 'num' ? String(bad ? (q.answer % 73) + 1 : q.answer) : BB.book(bad ? (q.answer % 73) + 1 : q.answer).name;
@@ -74,13 +75,18 @@ window.__step = function () {
   // odd one out
   const odd = $$('.odd-btn:not(:disabled)');
   if (odd.length === 4) { const secs = odd.map((b) => BB.book(+b.dataset.n).sec); const o = odd.find((b, i) => secs.filter((s) => s === secs[i]).length === 1); o.click(); return 'odd'; }
-  // mystery: binary search
+  // mystery: read every clue row and guess the middle of the books that still fit them all
   if ($('.mys-box') && $('.mys-box ~ .ans input:not(:disabled), .ans input:not(:disabled)')) {
-    window.__lo = window.__lo || 1; window.__hi = window.__hi || 73;
-    const rows = $$('.guess');
-    if (!rows.length) { const m = /books (\d+)–(\d+)/.exec($('.game-head').textContent); window.__lo = m ? +m[1] : 1; window.__hi = m ? +m[2] : 73; }
-    else { const g = id(rows[0].querySelector('.chip').textContent); if (/Earlier/.test(rows[0].textContent)) window.__hi = g - 1; else window.__lo = g + 1; }
-    const guess = Math.floor((window.__lo + window.__hi) / 2);
+    const m = /books (\d+)–(\d+)/.exec($('.game-head').textContent);
+    const lo = m ? +m[1] : 1, hi = m ? +m[2] : 73;
+    const clues = $$('.guess').map((row) => ({
+      p: id(row.querySelector('.chip').textContent), earlier: /Earlier/.test(row.querySelector('.g-dir').textContent),
+      t: /✓/.test(row.querySelector('.g-t').textContent), s: /✓/.test(row.querySelector('.g-s').textContent),
+      band: /very close/.test(row.querySelector('.g-h').textContent) ? 0 : /close/.test(row.querySelector('.g-h').textContent) ? 1 : 2,
+    }));
+    const fits = [];
+    for (let n = lo; n <= hi; n++) if (!clues.some((c) => c.p === n) && !BB.mysteryIgnored(n, clues, lo, hi).length) fits.push(n);
+    const guess = fits[Math.floor((fits.length - 1) / 2)];
     setVal($('.ans input'), BB.book(guess).name); $('.ans form').requestSubmit(); return 'mystery ' + guess;
   }
   // shelf

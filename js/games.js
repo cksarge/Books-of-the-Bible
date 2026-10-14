@@ -637,10 +637,29 @@
   });
 
   /* ---------------- Mystery book ---------------- */
+  // Scored on clue use, not guess count: each guess after the first should fit every clue shown so far.
+  const mysBand = (d) => (d <= 3 ? 0 : d <= 10 ? 1 : 2); // 🔥 very close · ♨️ close · ❄️ far
+  const MYS_CLUES = { dir: 'earlier/later', t: 'testament', s: 'section', h: 'how close' };
+  /** The feedback a guess p gives about the secret (what its row shows). */
+  BB.mysteryClue = (p, secret) => ({ p, earlier: secret < p, t: BB.book(p).testament === BB.book(secret).testament, s: BB.book(p).sec === BB.book(secret).sec, band: mysBand(Math.abs(secret - p)) });
+  /** Which kinds of clue guess g goes against (empty = a smart guess). */
+  BB.mysteryIgnored = (g, clues, from = 1, to = 73) => {
+    const out = new Set(), gb = BB.book(g);
+    if (g < from || g > to) out.add('dir');
+    clues.forEach((c) => {
+      const pb = BB.book(c.p);
+      if (c.earlier !== g < c.p) out.add('dir');
+      if (c.t !== (pb.testament === gb.testament)) out.add('t');
+      if (c.s !== (pb.sec === gb.sec)) out.add('s');
+      if (c.band !== mysBand(Math.abs(g - c.p))) out.add('h');
+    });
+    return Object.keys(MYS_CLUES).filter((k) => out.has(k));
+  };
+
   BB.def('mystery', {
     fix: ['teaches'],
     title: 'Mystery Book', icon: '🕵️', kind: 'game',
-    desc: 'Guess the hidden book. Each guess tells you earlier/later and whether the testament and section match.',
+    desc: 'Guess the hidden book from earlier/later, testament, section and closeness clues. Scored on how well each guess uses the clues, not how many it takes.',
     setup: [
       { key: 'pool', type: 'pool', label: 'Mystery book comes from', def: 'all' },
       { key: 'rounds', type: 'seg', label: 'Rounds', options: [[1, '1'], [3, '3'], [5, '5']], def: 3 },
@@ -654,10 +673,10 @@
       const missed = [];
       const round = () => {
         const secret = secrets[r], sb = BB.book(secret);
-        const guesses = [];
+        const guesses = [], clues = [], credits = [];
         let clue = false, over = false;
         api.progress(r / R);
-        body.innerHTML = `<div class="game-head"><h3>Mystery ${r + 1} of ${R}</h3><p class="muted">Guess the hidden book in ${MAX} tries${opts.books.length < 73 ? ` <span class="small">(it's one of books ${opts.books[0]}–${opts.books[opts.books.length - 1]})</span>` : ''}.</p></div>
+        body.innerHTML = `<div class="game-head"><h3>Mystery ${r + 1} of ${R}</h3><p class="muted">Guess the hidden book in ${MAX} tries${opts.books.length < 73 ? ` <span class="small">(it's one of books ${opts.books[0]}–${opts.books[opts.books.length - 1]})</span>` : ''}. Your score comes from how well each guess uses the clues, not how many guesses it takes.</p></div>
           <div class="mys-box"><div class="mys-q">?</div><button class="btn ghost small clue">🔎 Clue</button></div>
           <div class="ans"></div><div class="mys-legend muted small">⬆ earlier · ⬇ later · T = testament · S = section</div><div class="guesses"></div><div class="qfeedback"></div>`;
         U.$('.clue', body).onclick = (e) => { clue = true; e.target.outerHTML = `<div class="mys-clue">“${U.esc(sb.tag)}”</div>`; };
@@ -667,7 +686,12 @@
             const g = BB.match.identify(text);
             if (!g) { BB.fx.shake(box); ui.toast('Not a book name I recognize'); return; }
             if (guesses.includes(g)) { ui.toast('You already guessed that'); box.input.select(); return; }
+            const from = opts.books[0], to = opts.books[opts.books.length - 1];
+            const ignored = guesses.length ? BB.mysteryIgnored(g, clues, from, to) : null;
+            if (ignored) credits.push(ignored.length === 0 ? 1 : ignored.length === 1 ? 0.5 : 0);
+            const iq = !ignored ? '' : ignored.length ? `<span class="g-iq bad">⚠ Didn't fit: ${ignored.map((k) => MYS_CLUES[k]).join(', ')}</span>` : '<span class="g-iq ok">🧠 Fit every clue</span>';
             guesses.push(g);
+            clues.push(BB.mysteryClue(g, secret));
             box.input.value = '';
             const gb = BB.book(g);
             const dir = g === secret ? '🎯' : secret < g ? '⬆ Earlier' : '⬇ Later';
@@ -675,7 +699,7 @@
             const heat = g === secret ? '' : dist <= 3 ? '🔥 very close' : dist <= 10 ? '♨️ close' : '❄️ far';
             U.$('.guesses', body).insertAdjacentHTML('afterbegin', `<div class="guess ${g === secret ? 'win' : ''}">${ui.chip(g)}
               <span class="g-dir">${dir}</span><span class="g-t ${gb.testament === sb.testament ? 'y' : 'n'}">T ${gb.testament === sb.testament ? '✓' : '✗'}</span>
-              <span class="g-s ${gb.sec === sb.sec ? 'y' : 'n'}">S ${gb.sec === sb.sec ? '✓' : '✗'}</span><span class="g-h muted small">${heat}</span></div>`);
+              <span class="g-s ${gb.sec === sb.sec ? 'y' : 'n'}">S ${gb.sec === sb.sec ? '✓' : '✗'}</span><span class="g-h muted small">${heat}</span>${iq}</div>`);
             if (g === secret) end(true);
             else { BB.sfx('tap'); if (guesses.length >= MAX) end(false); }
           },
@@ -686,8 +710,11 @@
           over = true;
           box.lock();
           api.record(secret, win, clue);
-          const s = win ? Math.max(0.4, 1 - (guesses.length - 1) * 0.1) - (clue ? 0.15 : 0) : 0;
+          // clue use: average credit of guesses 2+ (1 = fit every clue, ½ = missed one kind, 0 = missed more)
+          const quality = credits.length ? credits.reduce((a, b) => a + b, 0) / credits.length : 1;
+          const s = (win ? Math.max(0.2, quality) : 0.5 * quality) - (clue ? 0.15 : 0);
           scoreSum += Math.max(0, s);
+          const smart = credits.filter((c) => c === 1).length;
           if (win) { solved++; if (clue) hinted++; BB.sfx('good'); BB.fx.confetti(30, U.$('.mys-q', body).getBoundingClientRect()); } else { missed.push(secret); BB.sfx('bad'); }
           const q = U.$('.mys-q', body);
           q.textContent = sb.name;
@@ -695,7 +722,8 @@
           q.classList.add('revealed');
           const fb = U.$('.qfeedback', body);
           fb.className = 'qfeedback ' + (win ? 'good' : 'bad');
-          fb.innerHTML = `<div class="fb-title">${win ? `🎯 Found it in ${U.plural(guesses.length, 'guess').replace('guesss', 'guesses')}!` : `It was ${U.esc(sb.name)}`}</div><div class="fb-info">#${secret} · ${U.esc(BB.sec(sb.sec).name)} — ${U.esc(sb.summary)}</div>`;
+          fb.innerHTML = `<div class="fb-title">${win ? `🎯 Found it in ${U.plural(guesses.length, 'guess').replace('guesss', 'guesses')}!` : `It was ${U.esc(sb.name)}`}</div><div class="fb-info">${credits.length ? `🧠 ${smart} of ${credits.length} follow-up ${credits.length === 1 ? 'guess' : 'guesses'} fit every clue · round score ${Math.round(Math.max(0, s) * 100)}%` : `🎯 First-guess find · round score ${Math.round(Math.max(0, s) * 100)}%`}</div>
+            <div class="fb-info">#${secret} · ${U.esc(BB.sec(sb.sec).name)} — ${U.esc(sb.summary)}</div>`;
           nextBtn(fb, r === R - 1 ? 'See results' : 'Next mystery →', () => { r++; r < R ? round() : api.finish({ correct: solved, total: R, hinted, missed, pct: scoreSum / R, unit: 'solved' }); });
         };
       };

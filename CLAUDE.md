@@ -29,7 +29,7 @@ Test screenshots and the final progress backup go to `tests/out/` (git-ignored).
 
 **Before every commit:** run `node --check js/*.js`, then `npm run test:match` and `npm run test:smoke`. For any change to the path, scoring, quizzes, sheets, or games, also run `npm run test:path` (and ideally `WRONG=4`).
 
-**Before every deploy that changes files:** bump `CACHE` in `sw.js` (currently `seventy-three-v3`). The service worker is network-first, so a stale cache only matters offline, but bumping keeps installed copies clean.
+**Before every deploy that changes files:** bump `CACHE` in `sw.js` (currently `seventy-three-v4`). The service worker is network-first, so a stale cache only matters offline, but bumping keeps installed copies clean.
 
 ---
 
@@ -152,6 +152,10 @@ Anything you can get wrong must be fixed before finishing, **except the Test Sim
 - **Test Simulation, Old Testament Final, New Testament Final, Grand Finale:** **one shot**. Submit, get graded, see the results. The timer stops at submit.
 - **Scores, stars and stats use the first attempt only.** The results screen shows "🔁 Fixed N mistakes", and the answer list marks "fixed on try N".
 
+### Mystery Book scoring (owner request)
+
+Graded on **clue use, not guess count** (counting guesses felt like luck). Each guess row shows earlier/later, T ✓/✗, S ✓/✗ and 🔥 very close (≤3) / ♨️ close (≤10) / ❄️ far. Every guess after the first is checked against all earlier rows (and the pool range) by `BB.mysteryIgnored(g, clues, from, to)` in games.js: fits every clue → credit 1 and "🧠 Fit every clue"; misses one kind → ½; misses two or more → 0, with "⚠ Didn't fit: …" naming them. Round score = average credit (1 if found on the first guess): solved → at least 0.2; not solved in 7 tries → half the average. 🔎 Clue still costs 0.15. `pct` is the mean round score.
+
 ### Answer matching (`BB.match` in core.js)
 
 - `norm()` lowercases, strips accents and punctuation, and drops filler words (the, book, of, gospel, according, to, saint, st, letter, epistle, prophet, apostle, paul, …). It maps ordinals (first/1st/i/one → 1, second/2nd/ii → 2, third/3rd/iii → 3, iv → 4), splits "1samuel" → "1 samuel", and moves a trailing number to the front ("Samuel 1" → "1 samuel").
@@ -229,10 +233,10 @@ Activities render into `#view` **without changing the hash**, so Back returns to
 
 ## Testing notes and gotchas
 
-- `tests/solver.js` defines `window.__step()`, which looks at the screen and does the next correct action for every activity. It also clicks Replay if a stop fails. `window.__wrongEvery = k` makes it miss every k-th first attempt. **When you add an activity or change its DOM, update the solver**, or `test:path` will report STUCK.
+- `tests/solver.js` defines `window.__step()`, which looks at the screen and does the next correct action for every activity. It also clicks Replay if a stop fails. `window.__wrongEvery = k` makes it miss every k-th first attempt. It never misses on purpose with one life left (otherwise the 12-question Final Review bosses, 3 lives, could never be beaten under `WRONG=4`). A normal full run takes about 3 min; `WRONG=4` a bit longer, and ~2★ on most stops is expected there. **When you add an activity or change its DOM, update the solver**, or `test:path` will report STUCK.
 - Test scripts set `seenWelcome = true` and **reload**. Otherwise the locked welcome popup (correctly) blocks every click.
 - Google Fonts requests are blocked in tests to keep them offline. The resulting "Failed to load resource" console noise is ignored on purpose.
-- Mystery Book can score 1–2 stars in `test:path` because the solver binary-searches (more guesses means fewer stars). That isn't a bug.
+- The solver plays Mystery Book by parsing the clue rows and guessing the middle of the books that still fit (`BB.mysteryIgnored`), so it should get 3 stars there.
 - `quiz.play` exposes the current question as `wrapEl._q` (and the shuffled options as `_opts`) for the solver. It isn't shown to users.
 - Book numbers are 1-based everywhere (`BB.book(n)` reads `BOOKS[n-1]`).
 

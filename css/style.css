@@ -627,6 +627,9 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 .y { background: var(--good-soft); color: var(--good); }
 .n { background: var(--bad-soft); color: var(--bad); }
 .g-h { margin-left: auto; }
+.g-iq { flex-basis: 100%; font-size: .8rem; font-weight: 700; }
+.g-iq.ok { color: var(--good); }
+.g-iq.bad { color: var(--bad); }
 
 .shelf-wrap { background: linear-gradient(var(--bg-2), var(--bg)); border-radius: 18px; padding: 10px; }
 .shelf { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 3px; padding: 6px 4px; background-image: repeating-linear-gradient(to bottom, transparent 0 calc(100% - 0px)); }

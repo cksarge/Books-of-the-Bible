@@ -62,7 +62,7 @@ It's plain HTML, CSS, and JavaScript, with no build step, no dependencies, and n
 - Neighborhood
 - Survival Streak
 - Odd One Out
-- Mystery Book
+- Mystery Book (scored on how well each guess uses the clues, not on how many guesses it takes)
 - Bookshelf
 - Unscramble
 - Section Boss Round
