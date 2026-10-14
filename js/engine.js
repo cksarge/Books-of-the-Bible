@@ -171,7 +171,7 @@
       const all = U.range(1, 73);
       const qs = U.shuffle(missed).map((n) => BB.quiz.gen({ books: all, targets: [n], n: 1, types: fix.types, format: 'typed' })[0]);
       BB.quiz.play(body, qs, {
-        api: Object.assign({}, api, { progress() {} }), noRecord: true, fixPhase: true, strict: fix.strict,
+        api: Object.assign({}, api, { progress() {} }), noRecord: true, fixPhase: true, strict: fix.strict, hints: opts.hints,
         onDone() { api.cleanup(); cont(); },
       });
     };

@@ -29,7 +29,7 @@ Test screenshots and the final progress backup go to `tests/out/` (git-ignored).
 
 **Before every commit:** run `node --check js/*.js`, then `npm run test:match` and `npm run test:smoke`. For any change to the path, scoring, quizzes, sheets, or games, also run `npm run test:path` (and ideally `WRONG=4`).
 
-**Before every deploy that changes files:** bump `CACHE` in `sw.js` (currently `seventy-three-v2`). The service worker is network-first, so a stale cache only matters offline, but bumping keeps installed copies clean.
+**Before every deploy that changes files:** bump `CACHE` in `sw.js` (currently `seventy-three-v3`). The service worker is network-first, so a stale cache only matters offline, but bumping keeps installed copies clean.
 
 ---
 
@@ -100,9 +100,9 @@ Checkpoint 1     : final-ot   (Old Testament Final — test sim 1–46)         
 Stage 9–13 ...
 Checkpoint 2     : final-nt   (New Testament Final — test sim 47–73)         ← after Stage 13
 Stage 14 fr1 "Final Review 1": fr1-flash (Weak Spots), fr1-quiz, fr1-sort, fr1-order, fr1-missing,
-                               fr1-odd, fr1-mystery, fr1-shelf, fr1-boss (rapid fire + survival 1→73)
+                               fr1-odd, fr1-mystery, fr1-shelf, fr1-boss "Boss: Final Review 1" (rapid fire + survival 1→73)
 Stage 15 fr2 "Final Review 2": fr2-flash (Summary Cards / Section Cards), fr2-match (section), fr2-first,
-                               fr2-hood, fr2-unscramble, fr2-quiz (typed), fr2-speed, fr2-boss (rapid fire + put in order)
+                               fr2-hood, fr2-unscramble, fr2-quiz (typed), fr2-speed, fr2-boss "Boss: Final Review 2" (rapid fire + put in order)
 Final Checkpoint : final-all  (Grand Finale — test sim 1–73)
 ```
 
@@ -110,6 +110,7 @@ Final Checkpoint : final-all  (Grand Finale — test sim 1–73)
 - **Unlocking:** stop *i* is unlocked once stop *i−1* has ≥1 star. Stars: ≥90% → 3, ≥70% → 2, ≥50% → 1 (`BB.starsFor`). Accuracy counts a hinted answer as half (`(correct − 0.5·hinted)/total`). A failed boss (out of lives) gives 0 stars.
 - **Review stops** are `seq` parts: 10 mixed questions on books 1–(previous stage end), then a rotating game (`REVIEW_GAMES` in path.js: sort/odd/first/missing/shelf).
 - **Stage bosses** (`BB.bossParts`): rapid fire with 10 typed questions (3 lives, 30 s each, boss HP bar), then "Final blow: recite it all" on a recite sheet covering **the section so far** (e.g. Historical Books stage 2 covers 6–16). This recite step **does** have the fix-mistakes loop (`fixMistakes: true`).
+- **No hints in bosses or finals** (owner request). Every boss part (stage bosses, the practice Section Boss Round, fr1-boss, fr2-boss) and the three test-sim finals pass `hints: false`, which hides the 💡 button in `quiz.play`, `survival`/`missing`, recite sheets, and the post-game fix round (`BB.fixMistakes` passes the part's `hints` on). Elsewhere hints stay on by default.
 - **Checkpoints** are separate sections (`CHECKPOINTS.cp1/cp2/cp3` in path.js) with dark banners, a gold border and a 🏆 (deliberately *not* plain gold, which would look like the gold Gospels stage). A section with one stop centers it.
 - **Trail layout** (`trail(key, n)` in path.js): each section gets its own random wander, **seeded by its id** so it looks the same every visit. Each step sideways is capped at `MAX_STEP = 24` (% of width). The owner asked for random shapes but **no big jumps between neighboring stops** (about ≤100px on a phone). Rows are `ROW = 136` px apart; node x is clamped to 20–80%.
 - **Path header:** position (📍 done/108), total stars, streak, a colored book strip, an "Up next" card, and a Daily review card. On load it scrolls to "You are here". Newly unlocked stops animate (`BB.path.pendingUnlock`).
@@ -139,7 +140,7 @@ Final Checkpoint : final-all  (Grand Finale — test sim 1–73)
 
 - Types, keyed on the book to recall: `after` ("What comes after X?"), `before`, `number` ("Which book is #N?"), `numberOf` ("What number is X?"), `section` (always multiple choice), `teaches` (shows the summary with the book's own name and aliases blanked out by `BB.redact`).
 - Target books are weighted by weakness (`store.weight`). Multiple-choice distractors are nearby books.
-- `BB.quiz.play` options: `lives`, `perSec` (per-question timer), `timeLimit` (whole quiz; Daily = 300 s), `boss` (HP bar), `noRecord`, `fixPhase`, `strict`, `redo` (default true).
+- `BB.quiz.play` options: `lives`, `perSec` (per-question timer), `timeLimit` (whole quiz; Daily = 300 s), `boss` (HP bar), `hints` (`false` hides the 💡 button), `noRecord`, `fixPhase`, `strict`, `redo` (default true).
 
 ### Fixing mistakes (owner request — important)
 
@@ -194,6 +195,7 @@ Anything you can get wrong must be fixed before finishing, **except the Test Sim
 - **Welcome popup** on first visit (`BB.showWelcome`, `locked: true` modal): no ✕, no Escape, no backdrop click, and it survives navigation (the router leaves `.modal-back.locked` alone). Only **Continue** closes it. It shows again after a progress reset.
 - **All popups freeze the page behind them** (`BB.ui.scrollLock` uses `position: fixed` on body so iOS respects it, then restores the scroll position).
 - **Timeline line** stops at era 11 (each era's `::before` connects to the next; the last has none).
+- **Hints** are off in every boss and in the Old Testament, New Testament and Grand Finale finals (see "No hints" above).
 - **Lesson first-letters round** reports "Perfect!" / "x of y correct" with **no "with hints"**, and its answers count as **unaided** in stats. Only the 💡 button counts as a hint, everywhere.
 - **Daily review** shows its focus books on a start screen only, never during the questions (that would give away answers).
 - **Locked path stops** shake only their icon. `BB.fx.shake`/`pop` use `composite: 'add'` so they don't wipe out an element's positioning transform.

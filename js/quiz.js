@@ -92,7 +92,7 @@
 
     /**
      * Play a list of questions inside container.
-     * o: { api, strict, lives, perSec, timeLimit (sec), boss (name), onDone(results, meta) }
+     * o: { api, strict, lives, perSec, timeLimit (sec), boss (name), hints (false hides 💡), onDone(results, meta) }
      */
     play(container, qs, o) {
       // Missed questions are queued again at the end until answered correctly.
@@ -175,6 +175,7 @@
           const box = ui.typed({
             book: q.answer,
             numeric: q.kind === 'num',
+            hint: o.hints !== false,
             placeholder: q.kind === 'num' ? 'Type a number 1–73…' : 'Type the book name…',
             hintText: q.kind === 'num' ? () => { const s = BB.sec(BB.book(q.target).sec); return `${s.name}: #${s.from}–${s.to}`; } : null,
             onSubmit: ({ text, hinted }) => {
@@ -326,7 +327,7 @@
     run(body, opts, api) {
       const qs = BB.quiz.gen(opts);
       BB.quiz.play(body, qs, {
-        api, lives: opts.lives, perSec: opts.perSec, boss: opts.boss, timeLimit: opts.timeLimit,
+        api, lives: opts.lives, perSec: opts.perSec, boss: opts.boss, timeLimit: opts.timeLimit, hints: opts.hints,
         onDone(results, meta) {
           const res = BB.quiz.summarize(results, { total: qs.length });
           if (meta.failed) { res.failed = true; res.failText = 'Out of lives! The boss wins this round.'; }

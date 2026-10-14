@@ -10,8 +10,8 @@
     const books = U.range(from, to);
     return [
       { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: `${Math.min(10, books.length + 3)} typed questions on ${U.esc(name)}. 3 lives, 30 seconds each. Lose all your lives and the boss wins!`,
-        opts: { books, n: Math.min(10, books.length + 3), format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: name }, weight: books.length },
-      { id: 'test', icon: '📝', label: 'Final blow: recite it all', blurb: `Write books ${from}–${to} from memory.`, opts: { from, to, timer: 'up', hints: true, fixMistakes: true } },
+        opts: { books, n: Math.min(10, books.length + 3), format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: name, hints: false }, weight: books.length },
+      { id: 'test', icon: '📝', label: 'Final blow: recite it all', blurb: `Write books ${from}–${to} from memory.`, opts: { from, to, timer: 'up', hints: false, fixMistakes: true } },
     ];
   };
 
@@ -86,7 +86,7 @@
     }
     if (i === 8) {
       add({ id: 'final-ot', type: 'final', stage: CHECKPOINTS.cp1, sec: null, icon: '🏛️', title: 'Old Testament Final',
-        desc: 'Test simulation: write all 46 Old Testament books from memory.', act: 'test', build: () => ({ from: 1, to: 46, timer: 'up', hints: true }) });
+        desc: 'Test simulation: write all 46 Old Testament books from memory.', act: 'test', build: () => ({ from: 1, to: 46, timer: 'up', hints: false }) });
     }
     add({ id: st.id + '-lesson', type: 'lesson', stage: st, sec: st.sec, icon: '📖', title: 'Lesson', desc: `Learn books ${st.from}–${st.to} with summaries, a memory trick, a fading list, and a quick check.`, act: 'lesson', build: () => ({ stage: st.id }) });
     add({ id: st.id + '-flash', type: 'flash', stage: st, sec: st.sec, icon: '🃏', title: 'Flashcards', desc: 'Flip through this chunk in mixed modes.', act: 'flash', build: () => ({ books: st.books, mode: 'mixed', shuffle: true }) });
@@ -100,7 +100,7 @@
   });
 
   add({ id: 'final-nt', type: 'final', stage: CHECKPOINTS.cp2, sec: null, icon: '✝️', title: 'New Testament Final',
-    desc: 'Test simulation: write all 27 New Testament books from memory.', act: 'test', build: () => ({ from: 47, to: 73, timer: 'up', hints: true }) });
+    desc: 'Test simulation: write all 27 New Testament books from memory.', act: 'test', build: () => ({ from: 47, to: 73, timer: 'up', hints: false }) });
 
   /* Final review: two stages over all 73 books, each with a different mix of games and tools. */
   const ALL = U.range(1, 73);
@@ -119,12 +119,12 @@
   frStop(fr1, 'odd', 'odd', 'Odd One Out', 'Eight rounds: spot the book from a different section.', () => ({ books: ALL, n: 8 }));
   frStop(fr1, 'mystery', 'mystery', 'Mystery Book', 'Three hidden books from anywhere in the Bible.', () => ({ books: ALL, rounds: 3 }));
   frStop(fr1, 'shelf', 'shelf', 'Bookshelf', 'All 73 books on the shelf with 15 gaps to fill.', () => ({ from: 1, to: 73, gaps: U.weightedSample(ALL, (n) => S.weight(n), 15) }));
-  add({ id: 'fr1-boss', type: 'boss', stage: fr1, sec: null, icon: '👑', title: 'Boss: The Whole Bible',
+  add({ id: 'fr1-boss', type: 'boss', stage: fr1, sec: null, icon: '👑', title: 'Boss: Final Review 1',
     desc: 'Rapid-fire typed questions on all 73 books (3 lives, 30 s each), then a survival streak from Genesis to Revelation.',
     act: 'seq', build: () => ({ parts: [
       { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: '12 typed questions from anywhere in the Bible. 3 lives, 30 seconds each.',
-        opts: { books: ALL, n: 12, format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: 'The Whole Bible' }, weight: 72 },
-      { id: 'survival', icon: '❤️', label: 'Survival: Genesis to Revelation', blurb: 'Name every book in order from Genesis onward. Three lives — go all the way!', opts: { start: 1, end: 73 } },
+        opts: { books: ALL, n: 12, format: 'typed', types: ['after', 'before', 'number', 'teaches', 'numberOf'], lives: 3, perSec: 30, boss: 'Final Review 1', hints: false }, weight: 72 },
+      { id: 'survival', icon: '❤️', label: 'Survival: Genesis to Revelation', blurb: 'Name every book in order from Genesis onward. Three lives — go all the way!', opts: { start: 1, end: 73, hints: false } },
     ] }) });
 
   frStop(fr2, 'flash', 'flash', 'Summary Cards', '', () => ({ books: S.weakest(ALL, 15), mode: BB.askSummaries() ? 'summary-name' : 'name-section', shuffle: true }), { type: 'flash' });
@@ -143,12 +143,12 @@
     desc: 'Rapid-fire typed questions on all 73 books (3 lives, 30 s each), then put scrambled books from across the Bible back in order.',
     act: 'seq', build: () => ({ parts: [
       { id: 'quiz', icon: '⚔️', label: 'Rapid fire', blurb: '12 typed questions from anywhere in the Bible. 3 lives, 30 seconds each.',
-        opts: { books: ALL, n: 12, format: 'typed', types: ['number', 'numberOf', 'teaches', 'after', 'before'], lives: 3, perSec: 30, boss: 'Final Review 2' }, weight: 24 },
-      { id: 'order', icon: '🔀', label: 'Put it all in order', blurb: 'Three rounds of eight books from across the Bible. Drag them into order.', opts: { books: ALL, size: 8, rounds: 3 } },
+        opts: { books: ALL, n: 12, format: 'typed', types: ['number', 'numberOf', 'teaches', 'after', 'before'], lives: 3, perSec: 30, boss: 'Final Review 2', hints: false }, weight: 24 },
+      { id: 'order', icon: '🔀', label: 'Put it all in order', blurb: 'Three rounds of eight books from across the Bible. Drag them into order.', opts: { books: ALL, size: 8, rounds: 3, hints: false } },
     ] }) });
   // keeps its old id so earlier progress on the Grand Final carries over
   add({ id: 'final-all', type: 'final', stage: CHECKPOINTS.cp3, sec: null, icon: '🏆', title: 'Grand Finale',
-    desc: 'The last stop: write all 73 books of the Catholic Bible from memory on a blank numbered sheet.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: true }) });
+    desc: 'The last stop: write all 73 books of the Catholic Bible from memory on a blank numbered sheet.', act: 'test', build: () => ({ from: 1, to: 73, timer: 'up', hints: false }) });
 
   const MAP = {};
   stops.forEach((s) => (MAP[s.id] = s));

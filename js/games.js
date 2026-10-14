@@ -228,6 +228,7 @@
           <div class="ans"></div><div class="qfeedback"></div>`;
         const box = ui.typed({
           book: t,
+          hint: opts.hints !== false,
           onSubmit({ text, hinted: h }) {
             const ok = BB.match.check(text, t, api.strict);
             box.lock();
@@ -559,6 +560,7 @@
         ans.innerHTML = '';
         const box = ui.typed({
           book: t,
+          hint: opts.hints !== false,
           onSubmit({ text, hinted: h }) {
             const ok = BB.match.check(text, t, api.strict);
             box.lock();
